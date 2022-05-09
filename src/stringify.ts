@@ -1,4 +1,4 @@
-import type { CsvColumns, CsvOptions, CsvParams, DateConstructor } from './types';
+import type { CsvColumns, CsvOptions, CsvParams, DateFactory } from './types';
 import type { TransformCallback, Readable } from 'node:stream';
 
 import { Transform } from 'node:stream';
@@ -13,7 +13,7 @@ export class CsvStringifyer<T = Record<string, any>> {
   private quoteRegex: RegExp;
   private titleCaseHeaders: boolean;
   private ignoreUnderscoredProps: boolean;
-  private dateContructor: DateConstructor;
+  private dateContructor: DateFactory;
   private columnsInferred = false;
   private dateOptions: CsvOptions['dateOptions'];
   private dateFormats: CsvOptions['dateFormats'];
@@ -131,12 +131,12 @@ export class CsvStringifyer<T = Record<string, any>> {
 }
 
 export function stringifyCsv<T extends Record<string, any>>(
-  arr: T[],
+  records: T[],
   columns?: CsvColumns<T>,
   options?: CsvParams
 ): string {
   const stringifyer = new CsvStringifyer(columns, options);
-  arr.forEach((row) => stringifyer.stringifyRow(row));
+  records.forEach((row) => stringifyer.stringifyRow(row));
   return stringifyer.output.join('');
 }
 
@@ -157,7 +157,7 @@ export class StringifyCsvTransformStream<T = Record<string, any>> extends Transf
   }
 }
 
-export function createStringifyCsvTransformStream<T extends Record<string, any>>(
+export function createStringifyCsvStream<T extends Record<string, any>>(
   columns?: CsvColumns<T>,
   options?: CsvParams
 ): Transform {
@@ -169,7 +169,7 @@ export function stringifyCsvFromStream<T extends Record<string, any>>(
   columns?: CsvColumns<T>,
   options?: CsvParams
 ): Promise<string> {
-  const stringifyStream = createStringifyCsvTransformStream(columns, options);
+  const stringifyStream = createStringifyCsvStream(columns, options);
   stream.pipe(stringifyStream);
   return collectStream(stringifyStream).then((strings) => strings.join(''));
 }

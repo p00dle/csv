@@ -49,13 +49,14 @@ export declare class CsvParser<T = Record<string, any>> {
     private pushValue;
     private determineValueType;
 }
-export declare function parseCsv<T extends Record<string, any>>(csvString: string, columns?: CsvColumns<T>, options?: CsvParams): T[];
+/** Parses csvString synchronously. */
+export declare function parseCsv<T extends Record<string, any>>(string: string, columns?: CsvColumns<T>, options?: CsvParams): T[];
 export declare class ParseCsvTransformStream<T = Record<string, any>> extends Transform {
     private parser;
     constructor(columns?: CsvColumns<T>, options?: CsvParams);
     _transform(chunk: Buffer, _encoding: BufferEncoding, done: TransformCallback): void;
     _flush(done: TransformCallback): void;
 }
-export declare function createParseCsvTransformStream<T extends Record<string, any>>(columns?: CsvColumns<T>, options?: CsvParams): Transform;
+export declare function createParseCsvStream<T extends Record<string, any>>(columns?: CsvColumns<T>, options?: CsvParams): Transform;
 export declare function parseCsvFromStream<T extends Record<string, any>>(stream: Readable | Transform, columns?: CsvColumns<T>, options?: CsvParams): Promise<T[]>;
 //# sourceMappingURL=parse.d.ts.map

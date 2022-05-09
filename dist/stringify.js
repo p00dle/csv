@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.stringifyCsvFromStream = exports.createStringifyCsvTransformStream = exports.StringifyCsvTransformStream = exports.stringifyCsv = exports.CsvStringifyer = void 0;
+exports.stringifyCsvFromStream = exports.createStringifyCsvStream = exports.StringifyCsvTransformStream = exports.stringifyCsv = exports.CsvStringifyer = void 0;
 const node_stream_1 = require("node:stream");
 const utils_1 = require("./utils");
 const stream_utils_1 = require("./stream-utils");
@@ -108,9 +108,9 @@ class CsvStringifyer {
     }
 }
 exports.CsvStringifyer = CsvStringifyer;
-function stringifyCsv(arr, columns, options) {
+function stringifyCsv(records, columns, options) {
     const stringifyer = new CsvStringifyer(columns, options);
-    arr.forEach((row) => stringifyer.stringifyRow(row));
+    records.forEach((row) => stringifyer.stringifyRow(row));
     return stringifyer.output.join('');
 }
 exports.stringifyCsv = stringifyCsv;
@@ -130,12 +130,12 @@ class StringifyCsvTransformStream extends node_stream_1.Transform {
     }
 }
 exports.StringifyCsvTransformStream = StringifyCsvTransformStream;
-function createStringifyCsvTransformStream(columns, options) {
+function createStringifyCsvStream(columns, options) {
     return new StringifyCsvTransformStream(columns, options);
 }
-exports.createStringifyCsvTransformStream = createStringifyCsvTransformStream;
+exports.createStringifyCsvStream = createStringifyCsvStream;
 function stringifyCsvFromStream(stream, columns, options) {
-    const stringifyStream = createStringifyCsvTransformStream(columns, options);
+    const stringifyStream = createStringifyCsvStream(columns, options);
     stream.pipe(stringifyStream);
     return (0, stream_utils_1.collectStream)(stringifyStream).then((strings) => strings.join(''));
 }

@@ -5,8 +5,8 @@ import {
   parseCsv,
   parseCsvFromStream,
   stringifyCsvFromStream,
-  createParseCsvTransformStream,
-  createStringifyCsvTransformStream,
+  createParseCsvStream,
+  createStringifyCsvStream,
   ParseCsvTransformStream,
   StringifyCsvTransformStream,
 } from '../src';
@@ -69,8 +69,8 @@ describe('stream utils', () => {
 });
 
 describe('stream factories', () => {
-  it('parse', () => expect(createParseCsvTransformStream() instanceof ParseCsvTransformStream).toBe(true));
-  it('stringify', () => expect(createStringifyCsvTransformStream() instanceof StringifyCsvTransformStream).toBe(true));
+  it('parse', () => expect(createParseCsvStream() instanceof ParseCsvTransformStream).toBe(true));
+  it('stringify', () => expect(createStringifyCsvStream() instanceof StringifyCsvTransformStream).toBe(true));
 });
 
 describe('parse-stringify untyped', () => {

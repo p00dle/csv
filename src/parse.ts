@@ -1,5 +1,5 @@
 import type { TransformCallback } from 'node:stream';
-import type { CsvColumns, CsvOptions, CsvParams, DateConstructor } from './types';
+import type { CsvColumns, CsvOptions, CsvParams, DateFactory } from './types';
 
 import { Transform, Readable } from 'node:stream';
 import { normalizeOptions, parsersByTypeFactory } from './utils';
@@ -23,7 +23,7 @@ export class CsvParser<T = Record<string, any>> {
   private escapeQuote: string;
   private escapeQuoteLength: number;
   private escapeQuoteRegex: RegExp;
-  private dateContructor: DateConstructor;
+  private dateContructor: DateFactory;
   private dateOptions: CsvOptions['dateOptions'];
   private dateFormats: CsvOptions['dateFormats'];
   private columns: CsvColumns<T> | undefined = undefined;
@@ -310,14 +310,14 @@ export class CsvParser<T = Record<string, any>> {
     if (this.isCurrentValueQuoted) this.cursor += this.quoteLength;
   }
 }
-
+/** Parses csvString synchronously. */
 export function parseCsv<T extends Record<string, any>>(
-  csvString: string,
+  string: string,
   columns?: CsvColumns<T>,
   options?: CsvParams
 ): T[] {
   const parser = new CsvParser(false, columns, options);
-  parser.buffer = /\r/.test(csvString) ? csvString.replace(/\r/g, '') : csvString;
+  parser.buffer = /\r/.test(string) ? string.replace(/\r/g, '') : string;
   parser.parseHeaders();
   parser.parseCsv();
   parser.finalParseCsv();
@@ -349,7 +349,7 @@ export class ParseCsvTransformStream<T = Record<string, any>> extends Transform 
   }
 }
 
-export function createParseCsvTransformStream<T extends Record<string, any>>(
+export function createParseCsvStream<T extends Record<string, any>>(
   columns?: CsvColumns<T>,
   options?: CsvParams
 ): Transform {
@@ -361,7 +361,7 @@ export function parseCsvFromStream<T extends Record<string, any>>(
   columns?: CsvColumns<T>,
   options?: CsvParams
 ): Promise<T[]> {
-  const parseStream = createParseCsvTransformStream(columns, options);
+  const parseStream = createParseCsvStream(columns, options);
   stream.pipe(parseStream);
   return collectStream(parseStream);
 }

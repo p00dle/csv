@@ -35,11 +35,11 @@ function camelCaseToTitleCase(str) {
     return str.replace(/[A-Z]/g, (x) => ' ' + x).replace(/^[a-z]/, (x) => x.toUpperCase());
 }
 exports.camelCaseToTitleCase = camelCaseToTitleCase;
-function parsersByTypeFactory(dateConstructor, dateOptions, dateFormats) {
-    const date = dateConstructor(Object.assign(Object.assign({}, dateOptions), { format: dateFormats.date }));
-    const datetime = dateConstructor(Object.assign(Object.assign({}, dateOptions), { format: dateFormats.dateTime }));
-    const datetimes = dateConstructor(Object.assign(Object.assign({}, dateOptions), { format: dateFormats.dateTimeSeconds }));
-    const timestamp = dateConstructor(Object.assign(Object.assign({}, dateOptions), { format: dateFormats.timestamp }));
+function parsersByTypeFactory(dateFactory, dateOptions, dateFormats) {
+    const date = dateFactory(Object.assign(Object.assign({}, dateOptions), { format: dateFormats.date }));
+    const datetime = dateFactory(Object.assign(Object.assign({}, dateOptions), { format: dateFormats.dateTime }));
+    const datetimes = dateFactory(Object.assign(Object.assign({}, dateOptions), { format: dateFormats.dateTimeSeconds }));
+    const timestamp = dateFactory(Object.assign(Object.assign({}, dateOptions), { format: dateFormats.timestamp }));
     return {
         string: (x) => x,
         integer: (x) => parseInt(x, 10),
@@ -62,11 +62,11 @@ function parsersByTypeFactory(dateConstructor, dateOptions, dateFormats) {
     };
 }
 exports.parsersByTypeFactory = parsersByTypeFactory;
-function stringifyersByTypeFactory(dateConstructor, dateOptions, dateFormats) {
-    const date = dateConstructor(Object.assign(Object.assign({}, dateOptions), { format: dateFormats.date }));
-    const datetime = dateConstructor(Object.assign(Object.assign({}, dateOptions), { format: dateFormats.dateTime }));
-    const datetimes = dateConstructor(Object.assign(Object.assign({}, dateOptions), { format: dateFormats.dateTimeSeconds }));
-    const timestamp = dateConstructor(Object.assign(Object.assign({}, dateOptions), { format: dateFormats.timestamp }));
+function stringifyersByTypeFactory(dateFactory, dateOptions, dateFormats) {
+    const date = dateFactory(Object.assign(Object.assign({}, dateOptions), { format: dateFormats.date }));
+    const datetime = dateFactory(Object.assign(Object.assign({}, dateOptions), { format: dateFormats.dateTime }));
+    const datetimes = dateFactory(Object.assign(Object.assign({}, dateOptions), { format: dateFormats.dateTimeSeconds }));
+    const timestamp = dateFactory(Object.assign(Object.assign({}, dateOptions), { format: dateFormats.timestamp }));
     return {
         string: (x) => (typeof x === 'string' ? x : typeof x === 'boolean' || x ? '' + x : ''),
         integer: (x) => (typeof x === 'number' && !isNaN(x) ? x.toFixed(0) : ''),

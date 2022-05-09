@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.parseCsvFromStream = exports.createParseCsvTransformStream = exports.ParseCsvTransformStream = exports.parseCsv = exports.CsvParser = void 0;
+exports.parseCsvFromStream = exports.createParseCsvStream = exports.ParseCsvTransformStream = exports.parseCsv = exports.CsvParser = void 0;
 const node_stream_1 = require("node:stream");
 const utils_1 = require("./utils");
 const stream_utils_1 = require("./stream-utils");
@@ -287,9 +287,10 @@ class CsvParser {
     }
 }
 exports.CsvParser = CsvParser;
-function parseCsv(csvString, columns, options) {
+/** Parses csvString synchronously. */
+function parseCsv(string, columns, options) {
     const parser = new CsvParser(false, columns, options);
-    parser.buffer = /\r/.test(csvString) ? csvString.replace(/\r/g, '') : csvString;
+    parser.buffer = /\r/.test(string) ? string.replace(/\r/g, '') : string;
     parser.parseHeaders();
     parser.parseCsv();
     parser.finalParseCsv();
@@ -320,12 +321,12 @@ class ParseCsvTransformStream extends node_stream_1.Transform {
     }
 }
 exports.ParseCsvTransformStream = ParseCsvTransformStream;
-function createParseCsvTransformStream(columns, options) {
+function createParseCsvStream(columns, options) {
     return new ParseCsvTransformStream(columns, options);
 }
-exports.createParseCsvTransformStream = createParseCsvTransformStream;
+exports.createParseCsvStream = createParseCsvStream;
 function parseCsvFromStream(stream, columns, options) {
-    const parseStream = createParseCsvTransformStream(columns, options);
+    const parseStream = createParseCsvStream(columns, options);
     stream.pipe(parseStream);
     return (0, stream_utils_1.collectStream)(parseStream);
 }

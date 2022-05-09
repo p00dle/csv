@@ -1,8 +1,8 @@
 export type { CsvColumn, CsvColumns, CsvColumnType, CsvParams } from './types';
-export { parseCsv, parseCsvFromStream, createParseCsvTransformStream, ParseCsvTransformStream } from './parse';
+export { parseCsv, parseCsvFromStream, createParseCsvStream, ParseCsvTransformStream } from './parse';
 export {
   stringifyCsv,
   stringifyCsvFromStream,
-  createStringifyCsvTransformStream,
+  createStringifyCsvStream,
   StringifyCsvTransformStream,
 } from './stringify';

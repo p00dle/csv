@@ -11,7 +11,7 @@ export declare abstract class DateClass<T extends DateParams = DateParams> {
     parse(_str: string): number;
     stringify(_n: number): string;
 }
-export declare type DateConstructor = (params: DateParams) => DateClass;
+export declare type DateFactory = (params: DateParams) => DateClass;
 export declare type CsvColumn<T extends Record<string, any>, P extends keyof T = keyof T> = {
     prop: P;
     type: Exclude<CsvColumnType, 'row'>;
@@ -37,7 +37,7 @@ export interface CsvOptions {
         dateTimeSeconds: string;
         timestamp: string;
     };
-    dateContructor: DateConstructor;
+    dateContructor: DateFactory;
     skipHeader: boolean;
     useNullForEmpty: boolean;
     titleCaseHeaders: boolean;
