@@ -16,7 +16,7 @@ export declare class CsvParser<T = Record<string, any>> {
     private escapeQuote;
     private escapeQuoteLength;
     private escapeQuoteRegex;
-    private dateFactory;
+    private dateClass;
     private dateOptions;
     private dateFormats;
     private columns;

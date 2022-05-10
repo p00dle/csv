@@ -1,4 +1,4 @@
-import type { CsvColumns, CsvOptions, CsvParams, DateFactory } from './types';
+import type { CsvColumns, CsvOptions, CsvParams, DateConstructor } from './types';
 import type { TransformCallback, Readable } from 'node:stream';
 
 import { Transform } from 'node:stream';
@@ -13,7 +13,7 @@ export class CsvStringifyer<T = Record<string, any>> {
   private quoteRegex: RegExp;
   private titleCaseHeaders: boolean;
   private ignoreUnderscoredProps: boolean;
-  private dateFactory: DateFactory;
+  private dateClass: DateConstructor;
   private columnsInferred = false;
   private dateOptions: CsvOptions['dateOptions'];
   private dateFormats: CsvOptions['dateFormats'];
@@ -45,7 +45,7 @@ export class CsvStringifyer<T = Record<string, any>> {
       rowSeparator,
       quote,
       escapeQuote,
-      dateFactory,
+      dateClass,
       dateOptions,
       ignoreUnderscoredProps,
       titleCaseHeaders,
@@ -57,7 +57,7 @@ export class CsvStringifyer<T = Record<string, any>> {
     this.rowSeparator = rowSeparator;
     this.quote = quote;
     this.escapeQuote = escapeQuote;
-    this.dateFactory = dateFactory;
+    this.dateClass = dateClass;
     this.dateOptions = dateOptions;
     this.quoteRegex = new RegExp(quote, 'g');
     this.titleCaseHeaders = titleCaseHeaders;
@@ -69,7 +69,7 @@ export class CsvStringifyer<T = Record<string, any>> {
   }
   private initiate(columns: CsvColumns<T>): boolean {
     try {
-      const stringifyersByType = stringifyersByTypeFactory(this.dateFactory, this.dateOptions, this.dateFormats);
+      const stringifyersByType = stringifyersByTypeFactory(this.dateClass, this.dateOptions, this.dateFormats);
       this.stringifyers = columns.map((col) => {
         if (col.type === 'custom') {
           return col.stringify || stringifyersByType.custom;

@@ -1,5 +1,5 @@
 import { SimpleDate } from './simple-date';
-import type { CsvOptions, CsvParams, ParsersByType, DateFactory, StringifyersByType, CsvColumn } from './types';
+import type { CsvOptions, CsvParams, ParsersByType, DateConstructor, StringifyersByType, CsvColumn } from './types';
 
 export const defaultOptions: CsvOptions = {
   delimiter: ',',
@@ -19,7 +19,7 @@ export const defaultOptions: CsvOptions = {
     dateTimeSeconds: 'YYYY-MM-DD HH:mm:SS',
     timestamp: 'YYYY-MM-DD HH:mm:SS.sss',
   },
-  dateFactory: (params) => new SimpleDate(params),
+  dateClass: SimpleDate,
   skipHeader: false,
   useNullForEmpty: true,
 };
@@ -44,14 +44,14 @@ export function camelCaseToTitleCase(str: string): string {
 }
 
 export function parsersByTypeFactory(
-  dateFactory: DateFactory,
+  DateClass: DateConstructor,
   dateOptions: CsvOptions['dateOptions'],
   dateFormats: CsvOptions['dateFormats']
 ): ParsersByType {
-  const date = dateFactory({ ...dateOptions, format: dateFormats.date });
-  const datetime = dateFactory({ ...dateOptions, format: dateFormats.dateTime });
-  const datetimes = dateFactory({ ...dateOptions, format: dateFormats.dateTimeSeconds });
-  const timestamp = dateFactory({ ...dateOptions, format: dateFormats.timestamp });
+  const date = new DateClass({ ...dateOptions, format: dateFormats.date });
+  const datetime = new DateClass({ ...dateOptions, format: dateFormats.dateTime });
+  const datetimes = new DateClass({ ...dateOptions, format: dateFormats.dateTimeSeconds });
+  const timestamp = new DateClass({ ...dateOptions, format: dateFormats.timestamp });
   return {
     string: (x) => x,
     integer: (x) => parseInt(x, 10),
@@ -76,14 +76,14 @@ export function parsersByTypeFactory(
 }
 
 export function stringifyersByTypeFactory(
-  dateFactory: DateFactory,
+  DateClass: DateConstructor,
   dateOptions: CsvOptions['dateOptions'],
   dateFormats: CsvOptions['dateFormats']
 ): StringifyersByType {
-  const date = dateFactory({ ...dateOptions, format: dateFormats.date });
-  const datetime = dateFactory({ ...dateOptions, format: dateFormats.dateTime });
-  const datetimes = dateFactory({ ...dateOptions, format: dateFormats.dateTimeSeconds });
-  const timestamp = dateFactory({ ...dateOptions, format: dateFormats.timestamp });
+  const date = new DateClass({ ...dateOptions, format: dateFormats.date });
+  const datetime = new DateClass({ ...dateOptions, format: dateFormats.dateTime });
+  const datetimes = new DateClass({ ...dateOptions, format: dateFormats.dateTimeSeconds });
+  const timestamp = new DateClass({ ...dateOptions, format: dateFormats.timestamp });
   return {
     string: (x) => (typeof x === 'string' ? x : typeof x === 'boolean' || x ? '' + x : ''),
     integer: (x) => (typeof x === 'number' && !isNaN(x) ? x.toFixed(0) : ''),

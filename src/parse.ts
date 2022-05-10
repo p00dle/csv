@@ -1,5 +1,5 @@
 import type { TransformCallback } from 'node:stream';
-import type { CsvColumns, CsvOptions, CsvParams, DateFactory } from './types';
+import type { CsvColumns, CsvOptions, CsvParams, DateConstructor } from './types';
 
 import { Transform, Readable } from 'node:stream';
 import { normalizeOptions, parsersByTypeFactory } from './utils';
@@ -23,7 +23,7 @@ export class CsvParser<T = Record<string, any>> {
   private escapeQuote: string;
   private escapeQuoteLength: number;
   private escapeQuoteRegex: RegExp;
-  private dateFactory: DateFactory;
+  private dateClass: DateConstructor;
   private dateOptions: CsvOptions['dateOptions'];
   private dateFormats: CsvOptions['dateFormats'];
   private columns: CsvColumns<T> | undefined = undefined;
@@ -46,7 +46,7 @@ export class CsvParser<T = Record<string, any>> {
 
   constructor(private isStream: boolean, columns?: CsvColumns<T>, options?: CsvParams) {
     this.columns = columns;
-    const { delimiter, rowSeparator, quote, escapeQuote, useNullForEmpty, dateFactory, dateOptions, dateFormats } =
+    const { delimiter, rowSeparator, quote, escapeQuote, useNullForEmpty, dateClass, dateOptions, dateFormats } =
       normalizeOptions(options);
     this.delimiter = delimiter;
     this.delimiterLength = delimiter.length;
@@ -59,7 +59,7 @@ export class CsvParser<T = Record<string, any>> {
     this.escapeQuoteRegex = new RegExp(escapeQuote.replace(/\\/g, '\\\\'), 'g');
     this.isEscapeAllQuotes = Array.from(escapeQuote).every((char) => char === quote);
     this.emptyValue = useNullForEmpty ? null : undefined;
-    this.dateFactory = dateFactory;
+    this.dateClass = dateClass;
     this.dateOptions = dateOptions;
     this.dateFormats = dateFormats;
   }
@@ -260,7 +260,7 @@ export class CsvParser<T = Record<string, any>> {
       const optionsInCsv = this.columns
         ? colIndexes.map((index) => (index === -1 ? null : (this.columns as CsvColumns<T>)[index]))
         : this.csvHeaders.map(() => untypedColumn);
-      const parsersByType = parsersByTypeFactory(this.dateFactory, this.dateOptions, this.dateFormats);
+      const parsersByType = parsersByTypeFactory(this.dateClass, this.dateOptions, this.dateFormats);
       this.parsers = optionsInCsv.map((option) => {
         if (option === null) return null;
         if (option.type === 'custom') return option.parse || parsersByType.custom;

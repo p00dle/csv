@@ -16,13 +16,13 @@ class CsvStringifyer {
         this.headerSent = false;
         this.areColsRow = [];
         this.output = [];
-        const { delimiter, rowSeparator, quote, escapeQuote, dateFactory, dateOptions, ignoreUnderscoredProps, titleCaseHeaders, skipHeader, dateFormats, } = (0, utils_1.normalizeOptions)(options);
+        const { delimiter, rowSeparator, quote, escapeQuote, dateClass, dateOptions, ignoreUnderscoredProps, titleCaseHeaders, skipHeader, dateFormats, } = (0, utils_1.normalizeOptions)(options);
         this.ignoreUnderscoredProps = ignoreUnderscoredProps;
         this.delimiter = delimiter;
         this.rowSeparator = rowSeparator;
         this.quote = quote;
         this.escapeQuote = escapeQuote;
-        this.dateFactory = dateFactory;
+        this.dateClass = dateClass;
         this.dateOptions = dateOptions;
         this.quoteRegex = new RegExp(quote, 'g');
         this.titleCaseHeaders = titleCaseHeaders;
@@ -46,7 +46,7 @@ class CsvStringifyer {
     }
     initiate(columns) {
         try {
-            const stringifyersByType = (0, utils_1.stringifyersByTypeFactory)(this.dateFactory, this.dateOptions, this.dateFormats);
+            const stringifyersByType = (0, utils_1.stringifyersByTypeFactory)(this.dateClass, this.dateOptions, this.dateFormats);
             this.stringifyers = columns.map((col) => {
                 if (col.type === 'custom') {
                     return col.stringify || stringifyersByType.custom;
