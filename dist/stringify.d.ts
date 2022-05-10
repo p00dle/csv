@@ -10,7 +10,7 @@ export declare class CsvStringifyer<T = Record<string, any>> {
     private quoteRegex;
     private titleCaseHeaders;
     private ignoreUnderscoredProps;
-    private dateContructor;
+    private dateFactory;
     private columnsInferred;
     private dateOptions;
     private dateFormats;

@@ -31,7 +31,7 @@ class CsvParser {
         this.isCurrentColLast = false;
         this.csvHeaders = [];
         this.columns = columns;
-        const { delimiter, rowSeparator, quote, escapeQuote, useNullForEmpty, dateContructor, dateOptions, dateFormats } = (0, utils_1.normalizeOptions)(options);
+        const { delimiter, rowSeparator, quote, escapeQuote, useNullForEmpty, dateFactory, dateOptions, dateFormats } = (0, utils_1.normalizeOptions)(options);
         this.delimiter = delimiter;
         this.delimiterLength = delimiter.length;
         this.rowSeparator = rowSeparator;
@@ -43,7 +43,7 @@ class CsvParser {
         this.escapeQuoteRegex = new RegExp(escapeQuote.replace(/\\/g, '\\\\'), 'g');
         this.isEscapeAllQuotes = Array.from(escapeQuote).every((char) => char === quote);
         this.emptyValue = useNullForEmpty ? null : undefined;
-        this.dateContructor = dateContructor;
+        this.dateFactory = dateFactory;
         this.dateOptions = dateOptions;
         this.dateFormats = dateFormats;
     }
@@ -232,7 +232,7 @@ class CsvParser {
             const optionsInCsv = this.columns
                 ? colIndexes.map((index) => (index === -1 ? null : this.columns[index]))
                 : this.csvHeaders.map(() => untypedColumn);
-            const parsersByType = (0, utils_1.parsersByTypeFactory)(this.dateContructor, this.dateOptions, this.dateFormats);
+            const parsersByType = (0, utils_1.parsersByTypeFactory)(this.dateFactory, this.dateOptions, this.dateFormats);
             this.parsers = optionsInCsv.map((option) => {
                 if (option === null)
                     return null;

@@ -20,7 +20,7 @@ exports.defaultOptions = {
         dateTimeSeconds: 'YYYY-MM-DD HH:mm:SS',
         timestamp: 'YYYY-MM-DD HH:mm:SS.sss',
     },
-    dateContructor: (params) => new simple_date_1.SimpleDate(params),
+    dateFactory: (params) => new simple_date_1.SimpleDate(params),
     skipHeader: false,
     useNullForEmpty: true,
 };
