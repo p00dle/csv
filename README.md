@@ -263,14 +263,14 @@ interface CsvParams {
     dateTimeSeconds?: string;
     timestamp?: string;
   };
-  dateContructor?: DateFactory;
+  dateFactory?: DateFactory;
   skipHeader?: boolean;
   useNullForEmpty?: boolean;
   titleCaseHeaders?: boolean;
 }
 ```
 
-Note: when specifying non-default _dateOptions_ or _dateFormats_ _dateConstructor_ needs to point to a constructor from an external library (see [p00dle/datex](https://github.com/p00dle/datex)), otherwise it will throw an error
+Note: when specifying non-default _dateOptions_ or _dateFormats_ \_dateFactory needs to point to a constructor from an external library (see [p00dle/datex](https://github.com/p00dle/datex)), otherwise it will throw an error
 
 - _delimiter_ - string that separates values in a row; default: ','
 - _quote_ - string that wraps the value when value contains _delimiter_, _quote_, or _rowSeparator_; default: '"'
@@ -283,7 +283,7 @@ Note: when specifying non-default _dateOptions_ or _dateFormats_ _dateConstructo
   - _dst_ - the daylight savings system used to determine when daylight savings are applied
 - _dateFormats_
   - specify date format for specific column types
-- _dateConstructor_ - specify when using an external library
+- \_dateFactory - specify when using an external library
 - _skipHeader_ - when true headers will not be emitted when stringifying; no effect on parsing; default: false
 - _useNullForEmpty_ - when true empty values will be parsed as null, otherwise as undefined; default: true
 - _titleCaseHeaders_ - when columns are not specified the headers will be parsed from camel case to title case; only applies to stringifying; default: false

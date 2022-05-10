@@ -13,7 +13,7 @@ export class CsvStringifyer<T = Record<string, any>> {
   private quoteRegex: RegExp;
   private titleCaseHeaders: boolean;
   private ignoreUnderscoredProps: boolean;
-  private dateContructor: DateFactory;
+  private dateFactory: DateFactory;
   private columnsInferred = false;
   private dateOptions: CsvOptions['dateOptions'];
   private dateFormats: CsvOptions['dateFormats'];
@@ -45,7 +45,7 @@ export class CsvStringifyer<T = Record<string, any>> {
       rowSeparator,
       quote,
       escapeQuote,
-      dateContructor,
+      dateFactory,
       dateOptions,
       ignoreUnderscoredProps,
       titleCaseHeaders,
@@ -57,7 +57,7 @@ export class CsvStringifyer<T = Record<string, any>> {
     this.rowSeparator = rowSeparator;
     this.quote = quote;
     this.escapeQuote = escapeQuote;
-    this.dateContructor = dateContructor;
+    this.dateFactory = dateFactory;
     this.dateOptions = dateOptions;
     this.quoteRegex = new RegExp(quote, 'g');
     this.titleCaseHeaders = titleCaseHeaders;
@@ -69,7 +69,7 @@ export class CsvStringifyer<T = Record<string, any>> {
   }
   private initiate(columns: CsvColumns<T>): boolean {
     try {
-      const stringifyersByType = stringifyersByTypeFactory(this.dateContructor, this.dateOptions, this.dateFormats);
+      const stringifyersByType = stringifyersByTypeFactory(this.dateFactory, this.dateOptions, this.dateFormats);
       this.stringifyers = columns.map((col) => {
         if (col.type === 'custom') {
           return col.stringify || stringifyersByType.custom;

@@ -61,7 +61,7 @@ export interface CsvOptions {
     dateTimeSeconds: string;
     timestamp: string;
   };
-  dateContructor: DateFactory;
+  dateFactory: DateFactory;
   skipHeader: boolean;
   useNullForEmpty: boolean;
   titleCaseHeaders: boolean;

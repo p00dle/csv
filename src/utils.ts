@@ -19,7 +19,7 @@ export const defaultOptions: CsvOptions = {
     dateTimeSeconds: 'YYYY-MM-DD HH:mm:SS',
     timestamp: 'YYYY-MM-DD HH:mm:SS.sss',
   },
-  dateContructor: (params) => new SimpleDate(params),
+  dateFactory: (params) => new SimpleDate(params),
   skipHeader: false,
   useNullForEmpty: true,
 };
