@@ -1,1 +1,0 @@
-{"version":3,"file":"simple-date.d.ts","sourceRoot":"","sources":["../src/simple-date.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,SAAS,EAAE,UAAU,EAAE,MAAM,SAAS,CAAC;AAWrD,qBAAa,UAAW,YAAW,SAAS;IAC1C,OAAO,CAAC,UAAU,CAAa;gBACnB,MAAM,CAAC,EAAE,UAAU;IAS/B,KAAK,CAAC,GAAG,EAAE,MAAM;IAIjB,SAAS,CAAC,CAAC,EAAE,MAAM;CA4BpB"}
