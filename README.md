@@ -5,13 +5,13 @@ No dependency CSV parsing and stringifying, synchronously or via stream, typed o
 ### Installation
 
 ```shell
-yarn install @p00dle/csv
+yarn install @kksiuda/csv
 ```
 
 or
 
 ```shell
-npm install @p00dle/csv
+npm install @kksiuda/csv
 ```
 
 ### API
@@ -30,7 +30,7 @@ Parses string synchronously.
 Example
 
 ```ts
-import { parseCsv } from '@p00dle/csv';
+import { parseCsv } from '@kksiuda/csv';
 
 const csvString = 'a,b\n1,2\n';
 const columns = [
@@ -56,7 +56,7 @@ If columns are not specified the columns will be inferred from the first row.
 Example
 
 ```ts
-import { stringifyCsv } from '@p00dle/csv';
+import { stringifyCsv } from '@kksiuda/csv';
 
 const records = [{ a: 1 }, { a: 1, b: 2 }];
 const columns = [
@@ -80,7 +80,7 @@ Creates a transform stream for parsing csv.
 Example
 
 ```ts
-import { createParseCsvStream, createStringifyCsvStream } from '@p00dle/csv';
+import { createParseCsvStream, createStringifyCsvStream } from '@kksiuda/csv';
 import { createReadStream, createWriteStream } from 'node:fs';
 import { pipeline } from 'node:stream';
 const readable = createReadStream('./input.csv');
@@ -122,7 +122,7 @@ Takes an string input stream and asynchronously parses csv
 Example:
 
 ```ts
-import { parseCsvFromStream } from '@p00dle/csv';
+import { parseCsvFromStream } from '@kksiuda/csv';
 import { createReadStream } from 'node:fs';
 
 const readable = createReadStream('./input.csv');
@@ -145,7 +145,7 @@ Takes an objectMode input stream and asynchronously stringifies csv
 Example:
 
 ```ts
-import { stringifyCsvFromStream, createParseCsvStream } from '@p00dle/csv';
+import { stringifyCsvFromStream, createParseCsvStream } from '@kksiuda/csv';
 import { createReadStream } from 'node:fs';
 
 const readable = createReadStream('./input.csv');

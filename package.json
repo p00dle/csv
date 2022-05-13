@@ -1,6 +1,6 @@
 {
   "name": "@kksiuda/csv",
-  "version": "0.9.7",
+  "version": "0.9.8",
   "description": "Csv parsing and stringifying",
   "main": "./dist/index.js",
   "author": "Krzysztof Siuda",
