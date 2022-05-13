@@ -1,6 +1,6 @@
 {
   "name": "@kksiuda/csv",
-  "version": "0.9.5",
+  "version": "0.9.6",
   "description": "Csv parsing and stringifying",
   "main": "./dist/index.js",
   "author": "Krzysztof Siuda",
@@ -11,7 +11,7 @@
   },
   "homepage": "https://github.com/p00dle/csv#readme",
   "bugs": {
-    "url": "https://github.com/p00dle/csv"
+    "url": "https://github.com/p00dle/csv/issues"
   },
   "private": false,
   "devDependencies": {
