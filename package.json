@@ -30,7 +30,7 @@
     "format": "prettier --write .",
     "dist": "tsc --noemit && eslint . --ext .ts && prettier --write . && jest && tsc"
   },
-  "peerDependencies": {
+  "optionalDependencies": {
     "@p00dle/datex": "^0.9.0"
   }
 }
