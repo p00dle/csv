@@ -50,8 +50,9 @@ export type CsvColumn<T extends Record<string, any>, P extends keyof T = keyof T
 
 export interface CsvOptions {
   delimiter: string;
-  quote: string;
-  escapeQuote: string;
+  quote: string | null;
+  preserveCarriageReturn: boolean;
+  escapeQuote: string | null;
   rowSeparator: string;
   ignoreUnderscoredProps: boolean;
   dateOptions: Omit<DateParams, 'format'>;

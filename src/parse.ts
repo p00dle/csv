@@ -28,6 +28,7 @@ export class CsvParser<T = Record<string, any>> {
   private dateFormats: CsvOptions['dateFormats'];
   private columns: CsvColumns<T> | undefined = undefined;
   private headerStartFound = false;
+  private hasQuotes: boolean;
   private useColumn: boolean[] = [];
   private saveFieldAs: string[] = [];
   private parsers: (((str: string) => any) | null)[] = [];
@@ -52,12 +53,13 @@ export class CsvParser<T = Record<string, any>> {
     this.delimiterLength = delimiter.length;
     this.rowSeparator = rowSeparator;
     this.rowSeparatorLength = rowSeparator.length;
-    this.quote = quote;
-    this.quoteLength = quote.length;
-    this.escapeQuote = escapeQuote;
-    this.escapeQuoteLength = escapeQuote.length;
-    this.escapeQuoteRegex = new RegExp(escapeQuote.replace(/\\/g, '\\\\'), 'g');
-    this.isEscapeAllQuotes = Array.from(escapeQuote).every((char) => char === quote);
+    this.hasQuotes = typeof quote === 'string' && typeof escapeQuote === 'string';
+    this.quote = quote || '';
+    this.quoteLength = typeof quote === 'string' ? quote.length : 0;
+    this.escapeQuote = escapeQuote || '';
+    this.escapeQuoteLength = typeof escapeQuote === 'string' ? escapeQuote.length : 0;
+    this.escapeQuoteRegex = new RegExp((escapeQuote || '').replace(/\\/g, '\\\\'), 'g');
+    this.isEscapeAllQuotes = Array.from(escapeQuote || '').every((char) => char === quote);
     this.emptyValue = useNullForEmpty ? null : undefined;
     this.dateClass = dateClass;
     this.dateOptions = dateOptions;
@@ -304,7 +306,8 @@ export class CsvParser<T = Record<string, any>> {
 
   private determineValueType() {
     this.isCurrentColLast = this.col === this.width - 1;
-    this.isCurrentValueQuoted = this.buffer.slice(this.cursor, this.cursor + this.quoteLength) === this.quote;
+    this.isCurrentValueQuoted =
+      this.hasQuotes && this.buffer.slice(this.cursor, this.cursor + this.quoteLength) === this.quote;
     this.valueIndexStart = this.isCurrentValueQuoted ? this.cursor + this.quoteLength : this.cursor;
     this.isCurrentValueStarted = true;
     if (this.isCurrentValueQuoted) this.cursor += this.quoteLength;
@@ -317,7 +320,8 @@ export function parseCsv<T extends Record<string, any>>(
   options?: CsvParams
 ): T[] {
   const parser = new CsvParser(false, columns, options);
-  parser.buffer = /\r/.test(string) ? string.replace(/\r/g, '') : string;
+  const preserveCarriageReturn = options ? !!options.preserveCarriageReturn : false;
+  parser.buffer = !preserveCarriageReturn && /\r/.test(string) ? string.replace(/\r/g, '') : string;
   parser.parseHeaders();
   parser.parseCsv();
   parser.finalParseCsv();
@@ -326,14 +330,16 @@ export function parseCsv<T extends Record<string, any>>(
 
 export class ParseCsvTransformStream<T = Record<string, any>> extends Transform {
   private parser: CsvParser<T>;
+  private preserveCarriageReturn: boolean;
   constructor(columns?: CsvColumns<T>, options?: CsvParams) {
     super({ objectMode: true });
+    this.preserveCarriageReturn = options ? !!options.preserveCarriageReturn : false;
     this.parser = new CsvParser(true, columns, options);
     this.parser.setOnError((err) => this.emit('error', err));
     this.parser.setOnPushValue((val) => this.push(val));
   }
   _transform(chunk: Buffer, _encoding: BufferEncoding, done: TransformCallback): void {
-    this.parser.buffer += ('' + chunk).replace(/\r/g, '');
+    this.parser.buffer += this.preserveCarriageReturn ? '' + chunk : ('' + chunk).replace(/\r/g, '');
     if (!this.parser.headersParsed) {
       if (!this.parser.parseHeaders()) {
         return done();

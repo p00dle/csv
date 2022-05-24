@@ -462,6 +462,32 @@ a
   it('stringify stream', async () => expect(await willStringifyStreamThrow(records, cols, csvParams)).toBe(true));
 });
 
+describe('parse-stringify no quotes tab separated file with carriage returns', () => {
+  const csv = `col1\tcol2\tcol3\r
+1\t2\t3\r
+1
+a\t2
+b\t3
+c\r
+`;
+  const records = [
+    { col1: '1', col2: '2', col3: '3' },
+    { col1: '1\na', col2: '2\nb', col3: '3\nc' },
+  ];
+  const csvOptions = {
+    preserveCarriageReturn: true,
+    delimiter: '\t',
+    quote: null,
+    escapeQuote: null,
+    rowSeparator: '\r\n',
+  };
+  it('parse sync', () => expect(parseCsv(csv, undefined, csvOptions)).toEqual(records));
+  it('parse stream-1', async () => expect(await testParseStream(csv, 1, undefined, csvOptions)).toEqual(records));
+  it('parse stream-1000', async () => expect(await testParseStream(csv, 1000, undefined, csvOptions)).toEqual(records));
+  it('stringify sync', () => expect(stringifyCsv(records, undefined, csvOptions)).toEqual(csv));
+  it('stringify stream', async () => expect(await testStringifyStream(records, undefined, csvOptions)).toEqual(csv));
+});
+
 describe('parse-stringify date', () => {
   const csv = `date,datetime,datetimes,timestamp
 2000-01-02,2000-01-02 03:04,2000-01-02 03:04:05,2000-01-02 03:04:05.678

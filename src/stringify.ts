@@ -17,6 +17,7 @@ export class CsvStringifyer<T = Record<string, any>> {
   private columnsInferred = false;
   private dateOptions: CsvOptions['dateOptions'];
   private dateFormats: CsvOptions['dateFormats'];
+  private hasQuotes: boolean;
   private stringifyers: (((val: any) => string) | null)[] = [];
   private rowStringifyers: (((row: T) => string) | null)[] = [];
   private props: string[] = [];
@@ -55,11 +56,12 @@ export class CsvStringifyer<T = Record<string, any>> {
     this.ignoreUnderscoredProps = ignoreUnderscoredProps;
     this.delimiter = delimiter;
     this.rowSeparator = rowSeparator;
-    this.quote = quote;
-    this.escapeQuote = escapeQuote;
+    this.hasQuotes = typeof quote === 'string' && typeof escapeQuote === 'string';
+    this.quote = quote || '';
+    this.escapeQuote = escapeQuote || '';
     this.dateClass = dateClass;
     this.dateOptions = dateOptions;
-    this.quoteRegex = new RegExp(quote, 'g');
+    this.quoteRegex = new RegExp(quote || '', 'g');
     this.titleCaseHeaders = titleCaseHeaders;
     this.skipHeader = skipHeader;
     this.dateFormats = dateFormats;
@@ -108,7 +110,7 @@ export class CsvStringifyer<T = Record<string, any>> {
       this.onPushString(
         this.headers
           .map((str) =>
-            shouldEscape(str, this.delimiter, this.quote, this.rowSeparator)
+            this.hasQuotes && shouldEscape(str, this.delimiter, this.quote, this.rowSeparator)
               ? escape(str, this.quote, this.escapeQuote, this.quoteRegex)
               : str
           )
@@ -121,7 +123,11 @@ export class CsvStringifyer<T = Record<string, any>> {
       let str = this.areColsRow[col]
         ? (this.rowStringifyers[col] as (row: T) => string)(row)
         : (this.stringifyers[col] as (val: any) => string)(row[this.props[col] as unknown as keyof T]);
-      if (this.shouldTestForEscape[col] && shouldEscape(str, this.delimiter, this.quote, this.rowSeparator)) {
+      if (
+        this.hasQuotes &&
+        this.shouldTestForEscape[col] &&
+        shouldEscape(str, this.delimiter, this.quote, this.rowSeparator)
+      ) {
         str = escape(str, this.quote, this.escapeQuote, this.quoteRegex);
       }
       rowStrings.push(str);

@@ -248,8 +248,8 @@ Note: when parsing empty strings will always be parsed as either null or undefin
 ```ts
 interface CsvParams {
   delimiter?: string;
-  quote?: string;
-  escapeQuote?: string;
+  quote?: string | null;
+  escapeQuote?: string | null;
   rowSeparator?: string;
   ignoreUnderscoredProps?: boolean;
   dateOptions?: {
@@ -267,10 +267,13 @@ interface CsvParams {
   skipHeader?: boolean;
   useNullForEmpty?: boolean;
   titleCaseHeaders?: boolean;
+  preserveCarriageReturn?: boolean;
 }
 ```
 
 Note: when specifying non-default _dateOptions_ or _dateFormats_ _dateClass_ needs to point to a constructor from an external library (see [p00dle/datex](https://github.com/p00dle/datex)), otherwise it will throw an error
+
+Note: when both escape and escapeQuote are null no values are considered as quoted in both parsing and stringifying
 
 - _delimiter_ - string that separates values in a row; default: ','
 - _quote_ - string that wraps the value when value contains _delimiter_, _quote_, or _rowSeparator_; default: '"'
@@ -287,3 +290,4 @@ Note: when specifying non-default _dateOptions_ or _dateFormats_ _dateClass_ nee
 - _skipHeader_ - when true headers will not be emitted when stringifying; no effect on parsing; default: false
 - _useNullForEmpty_ - when true empty values will be parsed as null, otherwise as undefined; default: true
 - _titleCaseHeaders_ - when columns are not specified the headers will be parsed from camel case to title case; only applies to stringifying; default: false
+- _preserveCarriageReturn_ - when true carriage return (\\r) are not removed and considered valid characters; default: false

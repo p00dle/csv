@@ -22,6 +22,7 @@ export const defaultOptions: CsvOptions = {
   dateClass: SimpleDate,
   skipHeader: false,
   useNullForEmpty: true,
+  preserveCarriageReturn: false,
 };
 
 export function normalizeOptions(options?: CsvParams): CsvOptions {
