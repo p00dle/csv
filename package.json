@@ -1,6 +1,6 @@
 {
   "name": "@kksiuda/csv",
-  "version": "0.9.9",
+  "version": "0.9.10",
   "description": "Csv parsing and stringifying",
   "main": "./dist/index.js",
   "author": "Krzysztof Siuda",
@@ -44,5 +44,6 @@
     "format": "prettier --write .",
     "pre-build": "tsc --noemit && eslint . --ext .ts && prettier --write . && jest",
     "dist": "tsc"
-  }
+  },
+  "dependencies": {}
 }

@@ -14,7 +14,7 @@ type DST = 'none' | 'eu' | 'us';
 
 export interface DateParams {
   format?: string;
-  locale?: string;
+  locale?: any;
   timezoneOffset?: number | 'local';
   dst?: DST;
 }
