@@ -63,7 +63,7 @@ export interface CsvOptions {
     timestamp: string;
   };
   dateClass: DateConstructor;
-  skipHeader: boolean;
+  noHeader: boolean;
   useNullForEmpty: boolean;
   titleCaseHeaders: boolean;
 }
@@ -75,7 +75,7 @@ export type CsvParams = Partial<
   }
 >;
 
-export type CsvColumns<T = any> = CsvColumn<T>[] | readonly CsvColumn<T>[];
+export type CsvColumns<T extends Record<string, any> = Record<string, any>> = CsvColumn<T>[] | readonly CsvColumn<T>[];
 
 export type ParsersByType = Record<CsvColumnType, ((str: string) => any) | null>;
 

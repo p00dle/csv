@@ -20,7 +20,7 @@ export const defaultOptions: CsvOptions = {
     timestamp: 'YYYY-MM-DD HH:mm:SS.sss',
   },
   dateClass: SimpleDate,
-  skipHeader: false,
+  noHeader: false,
   useNullForEmpty: true,
   preserveCarriageReturn: false,
 };
@@ -99,7 +99,11 @@ export function stringifyersByTypeFactory(
   };
 }
 
-export function makeColumns<T>(firstRow: T, ignoreUnderscored: boolean, titleCaseHeaders: boolean): CsvColumn<T>[] {
+export function makeColumns<T extends Record<string, any>>(
+  firstRow: T,
+  ignoreUnderscored: boolean,
+  titleCaseHeaders: boolean
+): CsvColumn<T>[] {
   let props = Object.keys(firstRow) as (keyof T)[];
   if (ignoreUnderscored) props = props.filter((prop) => String(prop)[0] !== '_');
   return props

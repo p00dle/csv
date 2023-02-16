@@ -522,3 +522,41 @@ describe('SimpleDate', () => {
   it('throws when dst is not "none"', () => expect(() => new SimpleDate({ dst: 'eu' })).toThrow());
   it('throws when timezoneOffset is not 0', () => expect(() => new SimpleDate({ timezoneOffset: -6 })).toThrow());
 });
+
+describe('Misc', () => {
+  it('when property is not found in csv when parsing the value should be null', () => {
+    /*
+TODO: 
+* CSV: inferring types from columns gives any 
+* prop not found in csv should still return null
+
+    */
+  });
+});
+
+describe('parse without headers', () => {
+  const csv = `a,b,c\nd,e,f\n`;
+  const cols = [
+    { prop: 'col1', type: 'string' },
+    { prop: 'col2', type: 'string' },
+    { prop: 'col3', type: 'string' },
+  ] as CsvColumns;
+  const records = [
+    { col1: 'a', col2: 'b', col3: 'c' },
+    { col1: 'd', col2: 'e', col3: 'f' },
+  ];
+  it('parse sync', () => expect(parseCsv(csv, cols, { noHeader: true })).toEqual(records));
+  it('parse stream-1', async () => expect(await testParseStream(csv, 1, cols, { noHeader: true })).toEqual(records));
+  it('parse stream-1000', async () =>
+    expect(await testParseStream(csv, 1000, cols, { noHeader: true })).toEqual(records));
+  it('parse sync - throws on no cols', () => expect(() => parseCsv(csv, undefined, { noHeader: true })).toThrow());
+  it('parse stream - throws on no cols', async () => {
+    let err: any = null;
+    try {
+      await testParseStream(csv, 1, undefined, { noHeader: true });
+    } catch (error) {
+      err = error;
+    }
+    expect(err).not.toBeNull();
+  });
+});

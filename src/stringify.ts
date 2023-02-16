@@ -5,7 +5,7 @@ import { Transform } from 'node:stream';
 import { makeColumns, normalizeOptions, shouldEscape, stringifyersByTypeFactory, escape } from './utils';
 import { collectStream } from './stream-utils';
 
-export class CsvStringifyer<T = Record<string, any>> {
+export class CsvStringifyer<T extends Record<string, any> = Record<string, any>> {
   private delimiter: string;
   private rowSeparator: string;
   private quote: string;
@@ -25,7 +25,7 @@ export class CsvStringifyer<T = Record<string, any>> {
   private shouldTestForEscape: boolean[] = [];
   private headers: string[] = [];
   private headerSent = false;
-  private skipHeader: boolean;
+  private noHeader: boolean;
   private areColsRow: boolean[] = [];
   public output: string[] = [];
   private onPushString(str: string) {
@@ -50,7 +50,7 @@ export class CsvStringifyer<T = Record<string, any>> {
       dateOptions,
       ignoreUnderscoredProps,
       titleCaseHeaders,
-      skipHeader,
+      noHeader,
       dateFormats,
     } = normalizeOptions(options);
     this.ignoreUnderscoredProps = ignoreUnderscoredProps;
@@ -63,7 +63,7 @@ export class CsvStringifyer<T = Record<string, any>> {
     this.dateOptions = dateOptions;
     this.quoteRegex = new RegExp(quote || '', 'g');
     this.titleCaseHeaders = titleCaseHeaders;
-    this.skipHeader = skipHeader;
+    this.noHeader = noHeader;
     this.dateFormats = dateFormats;
     if (typeof columns !== 'undefined') {
       this.initiate(columns);
@@ -94,7 +94,7 @@ export class CsvStringifyer<T = Record<string, any>> {
       this.headers = columns.map((col) => (col.type === 'row' ? col.csvProp : col.csvProp || (col.prop as string)));
       this.shouldTestForEscape = columns.map((col) => col.type === 'string' || col.type === 'custom');
       this.columnsInferred = true;
-      this.headerSent = this.skipHeader;
+      this.headerSent = this.noHeader;
       return false;
     } catch (err) {
       this.onError(err as Error);
@@ -146,7 +146,7 @@ export function stringifyCsv<T extends Record<string, any>>(
   return stringifyer.output.join('');
 }
 
-export class StringifyCsvTransformStream<T = Record<string, any>> extends Transform {
+export class StringifyCsvTransformStream<T extends Record<string, any> = Record<string, any>> extends Transform {
   private stringifyer: CsvStringifyer<T>;
   constructor(columns?: CsvColumns<T>, options?: CsvParams) {
     super({ objectMode: true });

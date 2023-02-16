@@ -264,7 +264,7 @@ interface CsvParams {
     timestamp?: string;
   };
   dateClass?: DateConstructor;
-  skipHeader?: boolean;
+  noHeader?: boolean;
   useNullForEmpty?: boolean;
   titleCaseHeaders?: boolean;
   preserveCarriageReturn?: boolean;
@@ -287,7 +287,7 @@ Note: when both escape and escapeQuote are null no values are considered as quot
 - _dateFormats_
   - specify date format for specific column types
 - _dateClass_ - specify when using an external library
-- _skipHeader_ - when true headers will not be emitted when stringifying; no effect on parsing; default: false
+- _noHeader_ - when true headers will not be emitted when stringifying; when parsing columns will be assigned using the order of columns (throws when columns are undefined); default: false
 - _useNullForEmpty_ - when true empty values will be parsed as null, otherwise as undefined; default: true
 - _titleCaseHeaders_ - when columns are not specified the headers will be parsed from camel case to title case; only applies to stringifying; default: false
 - _preserveCarriageReturn_ - when true carriage return (\\r) are not removed and considered valid characters; default: false
