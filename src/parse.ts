@@ -31,6 +31,7 @@ export class CsvParser<T extends Record<string, any> = Record<string, any>> {
   private hasQuotes: boolean;
   private useColumn: boolean[] = [];
   private saveFieldAs: string[] = [];
+  private colsNotFound: string[] = [];
   private parsers: (((str: string) => any) | null)[] = [];
   private width = 0;
   private col = 0;
@@ -81,17 +82,7 @@ export class CsvParser<T extends Record<string, any> = Record<string, any>> {
     this.onPushValue = listener;
   }
   public setOnError(listener: (err: Error) => any) {
-    this.onError = listener;
-  }
-
-  public provideHeaders() {
-    if (!this.columns) {
-      return this.onError(new Error('Columns cannot be undefined when noHeaders is true'));
-    } else {
-      this.csvHeaders = this.columns
-        .filter((col) => col.type !== 'row')
-        .map((col) => (col as { prop: keyof T }).prop as string);
-    }
+    this.onError = listener as any;
   }
 
   public parseHeaders(): boolean {
@@ -259,12 +250,21 @@ export class CsvParser<T extends Record<string, any> = Record<string, any>> {
   private onPushValue(val: T) {
     this.output.push(val);
   }
-  private onError(error: Error) {
+  private onError(error: Error): never {
     throw error;
   }
 
   public initiate(): boolean {
     try {
+      if (this.noHeader) {
+        if (!this.columns) {
+          this.onError(new Error('Columns cannot be undefined when noHeaders is true'));
+        }
+        this.csvHeaders = this.columns
+          .filter((col) => col.type !== 'row')
+          .map((col) => (col as { prop: keyof T }).prop as string);
+        this.headersParsed = true;
+      }
       const colIndexes = this.columns
         ? this.csvHeaders.map((csvProp) =>
             (this.columns as CsvColumns<T>).findIndex((col) =>
@@ -280,6 +280,11 @@ export class CsvParser<T extends Record<string, any> = Record<string, any>> {
             return col.prop as string;
           })
         : this.csvHeaders;
+      if (this.columns) {
+        this.colsNotFound = this.columns
+          .filter((col) => col.type !== 'row' && !this.csvHeaders.includes(col.csvProp || (col.prop as string)))
+          .map((col) => (col as { prop: string }).prop);
+      }
       const optionsInCsv = this.columns
         ? colIndexes.map((index) => (index === -1 ? null : (this.columns as CsvColumns<T>)[index]))
         : this.csvHeaders.map(() => untypedColumn);
@@ -318,6 +323,11 @@ export class CsvParser<T extends Record<string, any> = Record<string, any>> {
     }
     this.col++;
     if (this.col === this.width) {
+      if (this.colsNotFound.length > 0) {
+        for (const prop of this.colsNotFound) {
+          this.rowValues[prop as keyof T] = this.emptyValue as T[keyof T];
+        }
+      }
       this.onPushValue(this.rowValues as T);
       this.rowValues = {};
       this.col = 0;
@@ -344,7 +354,6 @@ export function parseCsv<T extends Record<string, any>>(
   const preserveCarriageReturn = options ? !!options.preserveCarriageReturn : false;
   parser.buffer = !preserveCarriageReturn && /\r/.test(string) ? string.replace(/\r/g, '') : string;
   if (options && options.noHeader) {
-    parser.provideHeaders();
     parser.initiate();
   } else {
     parser.parseHeaders();
@@ -357,22 +366,19 @@ export function parseCsv<T extends Record<string, any>>(
 export class ParseCsvTransformStream<T extends Record<string, any> = Record<string, any>> extends Transform {
   private parser: CsvParser<T>;
   private preserveCarriageReturn: boolean;
-  private noHeader: boolean;
   constructor(columns?: CsvColumns<T>, options?: CsvParams) {
     super({ objectMode: true });
     this.preserveCarriageReturn = options ? !!options.preserveCarriageReturn : false;
     this.parser = new CsvParser(true, columns, options);
     this.parser.setOnError((err) => this.emit('error', err));
     this.parser.setOnPushValue((val) => this.push(val));
-    this.noHeader = options ? !!options.noHeader : false;
-    if (this.noHeader) {
-      this.parser.provideHeaders();
+    if (options && options.noHeader) {
       this.parser.initiate();
     }
   }
   _transform(chunk: Buffer, _encoding: BufferEncoding, done: TransformCallback): void {
     this.parser.buffer += this.preserveCarriageReturn ? '' + chunk : ('' + chunk).replace(/\r/g, '');
-    if (!this.noHeader && !this.parser.headersParsed) {
+    if (!this.parser.headersParsed) {
       if (!this.parser.parseHeaders()) {
         return done();
       }

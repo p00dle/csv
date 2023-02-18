@@ -523,15 +523,13 @@ describe('SimpleDate', () => {
   it('throws when timezoneOffset is not 0', () => expect(() => new SimpleDate({ timezoneOffset: -6 })).toThrow());
 });
 
-describe('Misc', () => {
-  it('when property is not found in csv when parsing the value should be null', () => {
-    /*
-TODO: 
-* CSV: inferring types from columns gives any 
-* prop not found in csv should still return null
-
-    */
-  });
+describe('Missing field in csv should produce null', () => {
+  const csv = 'h1,h3\na,a\nb,b\nc,c\n';
+  const records = [{ h2: null }, { h2: null }, { h2: null }];
+  const cols: CsvColumns = [{ prop: 'h2', type: 'string' }];
+  it('parse sync', () => expect(parseCsv(csv, cols)).toEqual(records));
+  it('parse stream-1', async () => expect(await testParseStream(csv, 1, cols)).toEqual(records));
+  it('parse stream-1000', async () => expect(await testParseStream(csv, 1000, cols)).toEqual(records));
 });
 
 describe('parse without headers', () => {
