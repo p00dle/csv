@@ -28,18 +28,7 @@ export class CsvStringifyer<T extends Record<string, any> = Record<string, any>>
   private noHeader: boolean;
   private areColsRow: boolean[] = [];
   public output: string[] = [];
-  private onPushString(str: string) {
-    this.output.push(str);
-  }
-  public setOnPushString(listener: (str: string) => any) {
-    this.onPushString = listener;
-  }
-  private onError(error: Error) {
-    throw error;
-  }
-  public setOnError(listener: (err: Error) => any) {
-    this.onError = listener;
-  }
+
   constructor(columns?: CsvColumns<T>, options?: CsvParams) {
     const {
       delimiter,
@@ -69,38 +58,15 @@ export class CsvStringifyer<T extends Record<string, any> = Record<string, any>>
       this.initiate(columns);
     }
   }
-  private initiate(columns: CsvColumns<T>): boolean {
-    try {
-      const stringifyersByType = stringifyersByTypeFactory(this.dateClass, this.dateOptions, this.dateFormats);
-      this.stringifyers = columns.map((col) => {
-        if (col.type === 'custom') {
-          return col.stringify || stringifyersByType.custom;
-        } else if (col.type === 'row') {
-          return null;
-        } else {
-          return stringifyersByType[col.type];
-        }
-      });
-      this.rowStringifyers = columns.map((col) => {
-        if (col.type === 'row') {
-          return col.stringifyRow;
-        } else {
-          return null;
-        }
-      });
-      this.width = columns.length;
-      this.areColsRow = columns.map((col) => col.type === 'row');
-      this.props = columns.map((col) => (col.type === 'row' ? '' : (col.prop as string)));
-      this.headers = columns.map((col) => (col.type === 'row' ? col.csvProp : col.csvProp || (col.prop as string)));
-      this.shouldTestForEscape = columns.map((col) => col.type === 'string' || col.type === 'custom');
-      this.columnsInferred = true;
-      this.headerSent = this.noHeader;
-      return false;
-    } catch (err) {
-      this.onError(err as Error);
-      return true;
-    }
+
+  public setOnPushString(listener: (str: string) => any) {
+    this.onPushString = listener;
   }
+
+  public setOnError(listener: (err: Error) => any) {
+    this.onError = listener;
+  }
+
   public stringifyRow(row: T) {
     if (!this.columnsInferred) {
       const isError = this.initiate(makeColumns(row, this.ignoreUnderscoredProps, this.titleCaseHeaders));
@@ -134,6 +100,47 @@ export class CsvStringifyer<T extends Record<string, any> = Record<string, any>>
     }
     this.onPushString(rowStrings.join(this.delimiter) + this.rowSeparator);
   }
+
+  private onError(error: Error) {
+    throw error;
+  }
+
+  private onPushString(str: string) {
+    this.output.push(str);
+  }
+
+  private initiate(columns: CsvColumns<T>): boolean {
+    try {
+      const stringifyersByType = stringifyersByTypeFactory(this.dateClass, this.dateOptions, this.dateFormats);
+      this.stringifyers = columns.map((col) => {
+        if (col.type === 'custom') {
+          return col.stringify || stringifyersByType.custom;
+        } else if (col.type === 'row') {
+          return null;
+        } else {
+          return stringifyersByType[col.type];
+        }
+      });
+      this.rowStringifyers = columns.map((col) => {
+        if (col.type === 'row') {
+          return col.stringifyRow;
+        } else {
+          return null;
+        }
+      });
+      this.width = columns.length;
+      this.areColsRow = columns.map((col) => col.type === 'row');
+      this.props = columns.map((col) => (col.type === 'row' ? '' : (col.prop as string)));
+      this.headers = columns.map((col) => (col.type === 'row' ? col.csvProp : col.csvProp || (col.prop as string)));
+      this.shouldTestForEscape = columns.map((col) => col.type === 'string' || col.type === 'custom');
+      this.columnsInferred = true;
+      this.headerSent = this.noHeader;
+      return false;
+    } catch (err) {
+      this.onError(err as Error);
+      return true;
+    }
+  }
 }
 
 export function stringifyCsv<T extends Record<string, any>>(
@@ -154,10 +161,12 @@ export class StringifyCsvTransformStream<T extends Record<string, any> = Record<
     this.stringifyer.setOnPushString((str) => this.push(str));
     this.stringifyer.setOnError((err) => this.emit('error', err));
   }
+
   _transform(chunk: T, _encoding: BufferEncoding, done: TransformCallback): void {
     this.stringifyer.stringifyRow(chunk);
     done();
   }
+
   _flush(done: TransformCallback): void {
     done(null);
   }

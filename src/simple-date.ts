@@ -20,10 +20,12 @@ export class SimpleDate implements DateClass {
       throw Error('DST conversion not supported; datex peer dependency required');
     if (params && params.timezoneOffset) throw Error('Timezone offset not supported; datex peer dependency required');
   }
+
   parse(str: string) {
     if (typeof str !== 'string' || str === '') return NaN;
     return +new Date(str);
   }
+
   stringify(n: number) {
     const date = new Date(n);
     if (this.formatType === 'datetime') {
