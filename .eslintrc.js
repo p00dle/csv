@@ -1,10 +1,6 @@
 module.exports = {
   parser: '@typescript-eslint/parser',
-  extends: ['plugin:@typescript-eslint/recommended'],
-  parserOptions: {
-    ecmaVersion: 2018,
-    sourceType: 'module',
-  },
+  extends: ['standard', 'plugin:@typescript-eslint/recommended', 'prettier'],
   ignorePatterns: ['node_modules/**', 'dist/**', 'coverage/**'],
   rules: {
     '@typescript-eslint/no-explicit-any': 'off',
@@ -12,5 +8,6 @@ module.exports = {
       'error',
       { vars: 'all', args: 'after-used', ignoreRestSiblings: false, argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
     ],
+    'comma-dangle': 'off',
   },
 };

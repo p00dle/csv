@@ -20,12 +20,15 @@ export interface DateParams {
 }
 
 export abstract class DateClass<T extends DateParams = DateParams> {
+  // eslint-disable-next-line no-useless-constructor
   constructor(_params: T) {
     //
   }
+
   parse(_str: string): number {
     return 0;
   }
+
   stringify(_n: number): string {
     return '';
   }

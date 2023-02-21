@@ -81,6 +81,7 @@ export class CsvParser<T extends Record<string, any> = Record<string, any>> {
   public setOnPushValue(listener: (val: T) => any) {
     this.onPushValue = listener;
   }
+
   public setOnError(listener: (err: Error) => any) {
     this.onError = listener as any;
   }
@@ -247,18 +248,11 @@ export class CsvParser<T extends Record<string, any> = Record<string, any>> {
     }
   }
 
-  private onPushValue(val: T) {
-    this.output.push(val);
-  }
-  private onError(error: Error): never {
-    throw error;
-  }
-
   public initiate(): boolean {
     try {
       if (this.noHeader) {
         if (!this.columns) {
-          this.onError(new Error('Columns cannot be undefined when noHeaders is true'));
+          return this.onError(new Error('Columns cannot be undefined when noHeaders is true'));
         }
         this.csvHeaders = this.columns
           .filter((col) => col.type !== 'row')
@@ -298,9 +292,16 @@ export class CsvParser<T extends Record<string, any> = Record<string, any>> {
       this.headersParsed = true;
       return false;
     } catch (err) {
-      this.onError(err as Error);
-      return true;
+      return this.onError(err as Error);
     }
+  }
+
+  private onPushValue(val: T) {
+    this.output.push(val);
+  }
+
+  private onError(error: Error): boolean {
+    throw error;
   }
 
   private flushProcessed(index: number) {
@@ -343,8 +344,9 @@ export class CsvParser<T extends Record<string, any> = Record<string, any>> {
     this.isCurrentValueStarted = true;
     if (this.isCurrentValueQuoted) this.cursor += this.quoteLength;
   }
+  //
 }
-/** Parses csvString synchronously. */
+
 export function parseCsv<T extends Record<string, any>>(
   string: string,
   columns?: CsvColumns<T>,
@@ -376,6 +378,7 @@ export class ParseCsvTransformStream<T extends Record<string, any> = Record<stri
       this.parser.initiate();
     }
   }
+
   _transform(chunk: Buffer, _encoding: BufferEncoding, done: TransformCallback): void {
     this.parser.buffer += this.preserveCarriageReturn ? '' + chunk : ('' + chunk).replace(/\r/g, '');
     if (!this.parser.headersParsed) {
@@ -386,6 +389,7 @@ export class ParseCsvTransformStream<T extends Record<string, any> = Record<stri
     this.parser.parseCsv();
     done();
   }
+
   _flush(done: TransformCallback): void {
     this.parser.parseCsv();
     this.parser.finalParseCsv();
