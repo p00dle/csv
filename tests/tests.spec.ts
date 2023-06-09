@@ -94,10 +94,10 @@ d,,
 });
 
 describe('parse-stringify typed', () => {
-  const csv = `col1,col2,col3,col4,col5
-a,1,2.3,4.5,TRUE
-b,2,2.4,5.6,FALSE
-d,,,,
+  const csv = `col1,col2,col3,col4,col5,col6
+a,1,2.3,4.5,TRUE,50%
+b,2,2.4,5.6,FALSE,0%
+d,,,,,
 `;
   const cols: CsvColumns = [
     { type: 'string', csvProp: 'col1', prop: 'strings' },
@@ -111,11 +111,12 @@ d,,,,
     },
     { type: 'float', csvProp: 'col4', prop: 'floats' },
     { type: 'boolean', csvProp: 'col5', prop: 'bools' },
+    { type: 'percentage', csvProp: 'col6', prop: 'percs' },
   ];
   const records = [
-    { strings: 'a', integers: 1, custom: '2.3c', floats: 4.5, bools: true },
-    { strings: 'b', integers: 2, custom: '2.4c', floats: 5.6, bools: false },
-    { strings: 'd', integers: null, custom: null, floats: null, bools: null },
+    { strings: 'a', integers: 1, custom: '2.3c', floats: 4.5, bools: true, percs: 0.5 },
+    { strings: 'b', integers: 2, custom: '2.4c', floats: 5.6, bools: false, percs: 0 },
+    { strings: 'd', integers: null, custom: null, floats: null, bools: null, percs: null },
   ];
   it('parse sync', () => expect(parseCsv(csv, cols)).toEqual(records));
   it('parse stream-1', async () => expect(await testParseStream(csv, 1, cols)).toEqual(records));

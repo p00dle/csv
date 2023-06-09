@@ -8,6 +8,7 @@ export type CsvColumnType =
   | 'datetimes'
   | 'timestamp'
   | 'custom'
+  | 'percentage'
   | 'row';
 
 type DST = 'none' | 'eu' | 'us';

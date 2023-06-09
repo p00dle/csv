@@ -71,6 +71,7 @@ export function parsersByTypeFactory(
     datetime: (x) => datetime.parse(x),
     datetimes: (x) => datetimes.parse(x),
     timestamp: (x) => timestamp.parse(x),
+    percentage: (x) => parseInt(x, 10) / 100,
     custom: (x) => x,
     row: null,
   };
@@ -95,6 +96,7 @@ export function stringifyersByTypeFactory(
     datetimes: (x) => datetimes.stringify(x),
     timestamp: (x) => timestamp.stringify(x),
     custom: (x) => (typeof x === 'string' ? x : typeof x === 'boolean' || x ? '' + x : ''),
+    percentage: (x) => (typeof x === 'number' && !isNaN(x) ? x * 100 + '%' : ''),
     row: null,
   };
 }
