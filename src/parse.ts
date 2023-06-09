@@ -31,6 +31,7 @@ export class CsvParser<T extends Record<string, any> = Record<string, any>> {
   private hasQuotes: boolean;
   private useColumn: boolean[] = [];
   private saveFieldAs: string[] = [];
+  private isColumnNonNullable: boolean[] = [];
   private colsNotFound: string[] = [];
   private parsers: (((str: string) => any) | null)[] = [];
   private width = 0;
@@ -76,6 +77,9 @@ export class CsvParser<T extends Record<string, any> = Record<string, any>> {
     this.dateOptions = dateOptions;
     this.dateFormats = dateFormats;
     this.noHeader = noHeader;
+    if (columns) {
+      this.isColumnNonNullable = columns.map((col) => (typeof col.nullable === 'boolean' ? !col.nullable : false));
+    }
   }
 
   public setOnPushValue(listener: (val: T) => any) {
@@ -319,6 +323,9 @@ export class CsvParser<T extends Record<string, any> = Record<string, any>> {
     if (this.useColumn[this.col]) {
       let value = this.buffer.slice(this.valueIndexStart, this.valueIndexEnd);
       if (this.isCurrentValueQuoted) value = value.replace(this.escapeQuoteRegex, this.quote);
+      if (this.isColumnNonNullable[this.col] && value === '') {
+        throw new Error(`Null value found in column ${this.csvHeaders[this.col]}`);
+      }
       this.rowValues[this.saveFieldAs[this.col] as keyof T] =
         value === '' ? this.emptyValue : (this.parsers[this.col] as (str: string) => any)(value);
     }
@@ -381,13 +388,17 @@ export class ParseCsvTransformStream<T extends Record<string, any> = Record<stri
 
   _transform(chunk: Buffer, _encoding: BufferEncoding, done: TransformCallback): void {
     this.parser.buffer += this.preserveCarriageReturn ? '' + chunk : ('' + chunk).replace(/\r/g, '');
-    if (!this.parser.headersParsed) {
-      if (!this.parser.parseHeaders()) {
-        return done();
+    try {
+      if (!this.parser.headersParsed) {
+        if (!this.parser.parseHeaders()) {
+          return done();
+        }
       }
+      this.parser.parseCsv();
+      done();
+    } catch (err) {
+      this.emit('error', err);
     }
-    this.parser.parseCsv();
-    done();
   }
 
   _flush(done: TransformCallback): void {

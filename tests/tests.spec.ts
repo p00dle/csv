@@ -561,3 +561,44 @@ describe('parse without headers', () => {
     expect(err).not.toBeNull();
   });
 });
+
+describe('parse throws on non-nullable column with empty value', () => {
+  const csv = `a,b\nd,\n`;
+  const cols = [
+    { prop: 'a', type: 'string' },
+    { prop: 'b', type: 'string', nullable: false },
+  ] as CsvColumns;
+  it('parse sync', () => expect(() => parseCsv(csv, cols)).toThrow());
+  it('parse stream-1', async () => expect(await willParseStreamThrow(csv, 1, cols)).toBe(true));
+  it('parse stream-1000', async () => expect(await willParseStreamThrow(csv, 1000, cols)).toBe(true));
+});
+
+describe('stringify throws on non-nullable column with undefined/null/NaN value', () => {
+  const records = [
+    {
+      a: 'a',
+      null: null,
+      undefined,
+      nan: NaN,
+    },
+  ];
+  const colsNull = [
+    { prop: 'a', type: 'string' },
+    { prop: 'null', type: 'string', nullable: false },
+  ] as CsvColumns;
+  const colsUndefined = [
+    { prop: 'a', type: 'string' },
+    { prop: 'undefined', type: 'boolean', nullable: false },
+  ] as CsvColumns;
+  const colsNan = [
+    { prop: 'a', type: 'string' },
+    { prop: 'nan', type: 'float', nullable: false },
+  ] as CsvColumns;
+  it('stringify sync - null', () => expect(() => stringifyCsv(records, colsNull)).toThrow());
+  it('stringify stream - null', async () => expect(await willStringifyStreamThrow(records, colsNull)).toBe(true));
+  it('stringify sync - undefined', () => expect(() => stringifyCsv(records, colsUndefined)).toThrow());
+  it('stringify stream - undefined', async () =>
+    expect(await willStringifyStreamThrow(records, colsUndefined)).toBe(true));
+  it('stringify sync - NaN', () => expect(() => stringifyCsv(records, colsNan)).toThrow());
+  it('stringify stream - NaN', async () => expect(await willStringifyStreamThrow(records, colsNan)).toBe(true));
+});

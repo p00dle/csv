@@ -41,6 +41,7 @@ export type CsvColumn<T extends Record<string, any>, P extends keyof T = keyof T
   | {
       prop: P;
       type: Exclude<CsvColumnType, 'row'>;
+      nullable?: boolean;
       stringify?: (val: T[P]) => string;
       parse?: (str: string) => T[P];
       stringifyRow?: (row: T) => string;
@@ -48,6 +49,7 @@ export type CsvColumn<T extends Record<string, any>, P extends keyof T = keyof T
     }
   | {
       type: 'row';
+      nullable?: boolean;
       stringifyRow: (row: T) => string;
       csvProp: string;
     };

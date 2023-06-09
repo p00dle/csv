@@ -15,6 +15,7 @@ export class CsvStringifyer<T extends Record<string, any> = Record<string, any>>
   private ignoreUnderscoredProps: boolean;
   private dateClass: DateConstructor;
   private columnsInferred = false;
+  private isColumnNonNullable: boolean[] = [];
   private dateOptions: CsvOptions['dateOptions'];
   private dateFormats: CsvOptions['dateFormats'];
   private hasQuotes: boolean;
@@ -86,9 +87,13 @@ export class CsvStringifyer<T extends Record<string, any> = Record<string, any>>
     }
     const rowStrings: string[] = [];
     for (let col = 0; col < this.width; col++) {
+      const value = row[this.props[col] as unknown as keyof T];
+      if (this.isColumnNonNullable[col] && (value === undefined || value === null || isNaN(value))) {
+        throw new Error(`Null/undefined/NaN value found in column ${this.props[col]}`);
+      }
       let str = this.areColsRow[col]
         ? (this.rowStringifyers[col] as (row: T) => string)(row)
-        : (this.stringifyers[col] as (val: any) => string)(row[this.props[col] as unknown as keyof T]);
+        : (this.stringifyers[col] as (val: any) => string)(value);
       if (
         this.hasQuotes &&
         this.shouldTestForEscape[col] &&
@@ -135,6 +140,7 @@ export class CsvStringifyer<T extends Record<string, any> = Record<string, any>>
       this.shouldTestForEscape = columns.map((col) => col.type === 'string' || col.type === 'custom');
       this.columnsInferred = true;
       this.headerSent = this.noHeader;
+      this.isColumnNonNullable = columns.map((col) => (typeof col.nullable === 'boolean' ? !col.nullable : false));
       return false;
     } catch (err) {
       this.onError(err as Error);
@@ -163,8 +169,12 @@ export class StringifyCsvTransformStream<T extends Record<string, any> = Record<
   }
 
   _transform(chunk: T, _encoding: BufferEncoding, done: TransformCallback): void {
-    this.stringifyer.stringifyRow(chunk);
-    done();
+    try {
+      this.stringifyer.stringifyRow(chunk);
+      done();
+    } catch (err) {
+      this.emit('error', err);
+    }
   }
 
   _flush(done: TransformCallback): void {
