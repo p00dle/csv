@@ -1,8 +1,8 @@
 import type { TransformCallback } from 'node:stream';
-import type { CsvColumns, CsvOptions, CsvParams, DateConstructor } from './types';
+import type { CsvColumns, CsvOptions, CsvParams, DateConstructor, InferParseType, InternalColumn } from './types';
 
 import { Transform, Readable } from 'node:stream';
-import { normalizeOptions, parsersByTypeFactory } from './utils';
+import { normalizeOptions, parsersByTypeFactory, transformColumns } from './utils';
 import { collectStream } from './stream-utils';
 
 const untypedColumn = {
@@ -26,7 +26,7 @@ export class CsvParser<T extends Record<string, any> = Record<string, any>> {
   private dateClass: DateConstructor;
   private dateOptions: CsvOptions['dateOptions'];
   private dateFormats: CsvOptions['dateFormats'];
-  private columns: CsvColumns<T> | undefined = undefined;
+  private columns: InternalColumn<T>[] | undefined = undefined;
   private headerStartFound = false;
   private hasQuotes: boolean;
   private useColumn: boolean[] = [];
@@ -49,7 +49,12 @@ export class CsvParser<T extends Record<string, any> = Record<string, any>> {
   private csvHeaders: string[] = [];
 
   constructor(private isStream: boolean, columns?: CsvColumns<T>, options?: CsvParams) {
-    this.columns = columns;
+    if (columns) {
+      this.columns = transformColumns(columns);
+      this.isColumnNonNullable = this.columns.map((col) =>
+        typeof col.nullable === 'undefined' ? false : !col.nullable
+      );
+    }
     const {
       delimiter,
       rowSeparator,
@@ -77,9 +82,6 @@ export class CsvParser<T extends Record<string, any> = Record<string, any>> {
     this.dateOptions = dateOptions;
     this.dateFormats = dateFormats;
     this.noHeader = noHeader;
-    if (columns) {
-      this.isColumnNonNullable = columns.map((col) => (typeof col.nullable === 'boolean' ? !col.nullable : false));
-    }
   }
 
   public setOnPushValue(listener: (val: T) => any) {
@@ -258,33 +260,29 @@ export class CsvParser<T extends Record<string, any> = Record<string, any>> {
         if (!this.columns) {
           return this.onError(new Error('Columns cannot be undefined when noHeaders is true'));
         }
-        this.csvHeaders = this.columns
-          .filter((col) => col.type !== 'row')
-          .map((col) => (col as { prop: keyof T }).prop as string);
+        this.csvHeaders = this.columns.map((col) => (col as { prop: keyof T }).prop as string);
         this.headersParsed = true;
       }
       const colIndexes = this.columns
         ? this.csvHeaders.map((csvProp) =>
-            (this.columns as CsvColumns<T>).findIndex((col) =>
-              col.type === 'row' ? false : col.csvProp === csvProp || col.prop === csvProp
-            )
+            (this.columns as InternalColumn<T>[]).findIndex((col) => col.header === csvProp || col.prop === csvProp)
           )
         : this.csvHeaders.map((_, i) => i);
       this.useColumn = colIndexes.map((index) => index !== -1);
       this.saveFieldAs = this.columns
         ? colIndexes.map((index) => {
             if (index === -1) return '';
-            const col = (this.columns as CsvColumns<T>)[index] as { prop: string };
+            const col = (this.columns as InternalColumn<T>[])[index] as { prop: string };
             return col.prop as string;
           })
         : this.csvHeaders;
       if (this.columns) {
         this.colsNotFound = this.columns
-          .filter((col) => col.type !== 'row' && !this.csvHeaders.includes(col.csvProp || (col.prop as string)))
+          .filter((col) => !this.csvHeaders.includes(col.header))
           .map((col) => (col as { prop: string }).prop);
       }
       const optionsInCsv = this.columns
-        ? colIndexes.map((index) => (index === -1 ? null : (this.columns as CsvColumns<T>)[index]))
+        ? colIndexes.map((index) => (index === -1 ? null : (this.columns as InternalColumn<T>[])[index]))
         : this.csvHeaders.map(() => untypedColumn);
       const parsersByType = parsersByTypeFactory(this.dateClass, this.dateOptions, this.dateFormats);
       this.parsers = optionsInCsv.map((option) => {
@@ -354,11 +352,7 @@ export class CsvParser<T extends Record<string, any> = Record<string, any>> {
   //
 }
 
-export function parseCsv<T extends Record<string, any>>(
-  string: string,
-  columns?: CsvColumns<T>,
-  options?: CsvParams
-): T[] {
+export function parseCsv<C extends CsvColumns>(string: string, columns?: C, options?: CsvParams): InferParseType<C> {
   const parser = new CsvParser(false, columns, options);
   const preserveCarriageReturn = options ? !!options.preserveCarriageReturn : false;
   parser.buffer = !preserveCarriageReturn && /\r/.test(string) ? string.replace(/\r/g, '') : string;
@@ -369,7 +363,7 @@ export function parseCsv<T extends Record<string, any>>(
   }
   parser.parseCsv();
   parser.finalParseCsv();
-  return parser.output;
+  return parser.output as any;
 }
 
 export class ParseCsvTransformStream<T extends Record<string, any> = Record<string, any>> extends Transform {

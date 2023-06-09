@@ -1,5 +1,15 @@
 import { SimpleDate } from './simple-date';
-import type { CsvOptions, CsvParams, ParsersByType, DateConstructor, StringifyersByType, CsvColumn } from './types';
+import type {
+  CsvOptions,
+  CsvParams,
+  ParsersByType,
+  DateConstructor,
+  StringifyersByType,
+  CsvColumns,
+  InternalColumn,
+  CsvColumn,
+  CsvColumnType,
+} from './types';
 
 export const defaultOptions: CsvOptions = {
   delimiter: ',',
@@ -54,7 +64,7 @@ export function parsersByTypeFactory(
   const datetimes = new DateClass({ ...dateOptions, format: dateFormats.dateTimeSeconds });
   const timestamp = new DateClass({ ...dateOptions, format: dateFormats.timestamp });
   return {
-    string: (x) => x,
+    text: (x) => x,
     integer: (x) => parseInt(x, 10),
     float: (x) => (x as unknown as number) * 1,
     boolean: (x) =>
@@ -73,7 +83,6 @@ export function parsersByTypeFactory(
     timestamp: (x) => timestamp.parse(x),
     percentage: (x) => parseInt(x, 10) / 100,
     custom: (x) => x,
-    row: null,
   };
 }
 
@@ -87,7 +96,7 @@ export function stringifyersByTypeFactory(
   const datetimes = new DateClass({ ...dateOptions, format: dateFormats.dateTimeSeconds });
   const timestamp = new DateClass({ ...dateOptions, format: dateFormats.timestamp });
   return {
-    string: (x) => (typeof x === 'string' ? x : typeof x === 'boolean' || x ? '' + x : ''),
+    text: (x) => (typeof x === 'string' ? x : typeof x === 'boolean' || x ? '' + x : ''),
     integer: (x) => (typeof x === 'number' && !isNaN(x) ? x.toFixed(0) : ''),
     float: (x) => (typeof x === 'number' && !isNaN(x) ? '' + x : ''),
     boolean: (x) => (x !== undefined && x !== null ? (x ? 'TRUE' : 'FALSE') : ''),
@@ -97,7 +106,6 @@ export function stringifyersByTypeFactory(
     timestamp: (x) => timestamp.stringify(x),
     custom: (x) => (typeof x === 'string' ? x : typeof x === 'boolean' || x ? '' + x : ''),
     percentage: (x) => (typeof x === 'number' && !isNaN(x) ? x * 100 + '%' : ''),
-    row: null,
   };
 }
 
@@ -105,16 +113,37 @@ export function makeColumns<T extends Record<string, any>>(
   firstRow: T,
   ignoreUnderscored: boolean,
   titleCaseHeaders: boolean
-): CsvColumn<T>[] {
+): CsvColumns<T> {
   let props = Object.keys(firstRow) as (keyof T)[];
   if (ignoreUnderscored) props = props.filter((prop) => String(prop)[0] !== '_');
-  return props
-    .filter((prop) => typeof prop === 'string')
-    .map((prop: keyof T) => ({
-      csvProp: titleCaseHeaders ? camelCaseToTitleCase(String(prop)) : String(prop),
-      prop,
+  const output = {} as unknown as CsvColumns<T>;
+  for (const prop of props) {
+    output[prop] = {
+      header: titleCaseHeaders ? camelCaseToTitleCase(String(prop)) : String(prop),
       type: 'custom' as const,
-    }));
+    };
+  }
+  return output;
+}
+
+export function transformColumns<T extends Record<string, any>>(columns: CsvColumns<T>): InternalColumn<T>[] {
+  return Object.entries(columns)
+    .map(([prop, col]: [string, CsvColumn<T> | CsvColumnType], i) =>
+      typeof col === 'string'
+        ? {
+            prop,
+            header: prop,
+            type: col,
+            index: i,
+          }
+        : {
+            ...col,
+            index: typeof col.index === 'undefined' ? i : col.index,
+            prop,
+            header: typeof col.header === 'undefined' ? (prop as string) : col.header,
+          }
+    )
+    .sort((a, b) => a.index - b.index);
 }
 
 export function shouldEscape(str: string, delimiter: string, escape: string, rowSeperator: string): boolean {

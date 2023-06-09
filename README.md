@@ -22,7 +22,7 @@ Parses string synchronously.
 
 - input
   - string: string
-  - columns?: [CsvColumn](#csvcolumn)
+  - columns?: [CsvColumns](#csvcolumns)
   - params?: [CsvParams](#csvparams)
 - output
   - when columns are specified it returns array of type inferred from columns, otherwise array of records
@@ -30,13 +30,13 @@ Parses string synchronously.
 Example
 
 ```ts
-import { parseCsv } from '@kksiuda/csv';
+import { parseCsv, CsvColumns } from '@kksiuda/csv';
 
 const csvString = 'a,b\n1,2\n';
-const columns = [
-  { prop: 'a', type: 'integer' },
-  { prop: 'b', type: 'string' },
-] as const;
+const columns = {
+  a: 'integer',
+  b: { type: 'string' },
+} satisfies CsvColumns;
 console.log(parseCsv(csvString)); // [ { a: '1', b: '2' } ]
 console.log(parseCsv(csvString, columns)); // [ { a: 1, b: '2' } ]
 ```
@@ -44,11 +44,11 @@ console.log(parseCsv(csvString, columns)); // [ { a: 1, b: '2' } ]
 #### stringifyCsv
 
 Stringifies array of records.
-If columns are not specified the columns will be inferred from the first row.
+Note: if columns are not specified the columns will be inferred from the first row.
 
 - input
   - records: when columns are specified array of type inferred from columns, otherwise array of records
-  - columns?: [CsvColumn[]](#csvcolumn)
+  - columns?: [CsvColumns](#csvcolumns)
   - params?: [CsvParams](#csvparams)
 - output
   - string
@@ -59,10 +59,10 @@ Example
 import { stringifyCsv } from '@kksiuda/csv';
 
 const records = [{ a: 1 }, { a: 1, b: 2 }];
-const columns = [
-  { prop: 'a', type: 'integer' },
-  { prop: 'b', type: 'integer' },
-] as const;
+const columns = {
+  a: 'integer',
+  b: { type: 'integer' },
+} satisfies CsvColumns;
 console.log(stringifyCsv(records)); // 'a\n1\n'
 console.log(stringifyCsv(records, columns)); // 'a,b\n1,\n1,2\n'
 ```
@@ -72,7 +72,7 @@ console.log(stringifyCsv(records, columns)); // 'a,b\n1,\n1,2\n'
 Creates a transform stream for parsing csv.
 
 - input
-  - columns?: [CsvColumn[]](#csvcolumn)
+  - columns?: [CsvColumns](#csvcolumns)
   - params?: [CsvParams](#csvparams)
 - output
   - Transform stream that takes in strings and outputs records in objectMode
@@ -101,7 +101,7 @@ pipeline(
 Creates a transform stream for stringifying csv.
 
 - input
-  - columns?: [CsvColumn[]](#csvcolumn)
+  - columns?: [CsvColumns](#csvcolumns)
   - params?: [CsvParams](#csvparams)
 - output
   - Transform stream that takes records in objectMode and outputs strings
@@ -114,7 +114,7 @@ Takes an string input stream and asynchronously parses csv
 
 - input
   - stream: Readable | Transform
-  - columns?: [CsvColumn[]](#csvcolumn)
+  - columns?: [CsvColumns](#csvcolumns)
   - params?: [CsvParams](#csvparams)
 - output
   - Promise of array of types specified in columns when defined or array of records otherwise
@@ -137,7 +137,7 @@ Takes an objectMode input stream and asynchronously stringifies csv
 
 - input
   - stream: Readable | Transform
-  - columns?: [CsvColumn[]](#csvcolumn)
+  - columns?: [CsvColumns](#csvcolumns)
   - params?: [CsvParams](#csvparams)
 - output
   - Promise of string
@@ -159,30 +159,27 @@ const parseStream = createParseCsvStream();
 
 ### Types
 
-#### CsvColumn
+#### CsvColumns
 
 ```ts
-type CsvColumn<T extends Record<string, any>, P extends keyof T = keyof T> =
-  | {
-      prop: P;
-      type: Exclude<CsvColumnType, 'row'>;
-      stringify?: (val: T[P]) => string;
-      parse?: (str: string) => T[P];
-      stringifyRow?: (row: T) => string;
-      csvProp?: string;
-    }
-  | {
-      type: 'row';
-      stringifyRow: (row: T) => string;
-      csvProp: string;
-    };
+type CsvColumns<T extends Record<string, any> = Record<string, any>> = {
+  [P in keyof T]?: CsvColumn<T, P> | CsvColumnType;
+};
+type CsvColumn<T extends Record<string, any>, P extends keyof T = keyof T> = {
+  type: CsvColumnType;
+  nullable?: boolean;
+  stringify?: (val: T[P]) => string;
+  parse?: (str: string) => T[P];
+  header?: string;
+  index?: number;
+};
 ```
 
 Note: when parsing empty strings will always be parsed as either null or undefined when useNullForEmpty is true
 
-- _prop_: property on the object; when _csvProp_ is not specified it will be used as a header when stringifying csv
+- _prop_: property on the object; when _header_ is not specified it will be used as a header when stringifying csv
 - _type_:
-  - 'string'
+  - 'text'
     - stringify
       - value is string -> value
       - value is boolean or truthy -> value cast to string
@@ -201,6 +198,12 @@ Note: when parsing empty strings will always be parsed as either null or undefin
       - else -> ''
     - parse
       - value -> value \* 1
+  - 'percentage'
+    - stringify
+    - value is number and not NaN -> value \* 100 cast to string with '%' at the end
+    - else -> ''
+    - parse
+      - value -> parseInt(value, 10) / 100
   - 'boolean'
     - stringify
       - value is not undefined and not null and falsy -> 'FALSE'
@@ -224,24 +227,17 @@ Note: when parsing empty strings will always be parsed as either null or undefin
       - uses _parse_ function; defaults to 'string'
     - stringify
       - uses _stringify_ function; defaults to 'string'
-  - 'row'
-    - parse
-      - column is ignored
-    - stringify
-      - uses _stringifyRow_ function;
 - _stringify_
   - function that takes value of _prop_ from the record and returns a string
   - only used when _type_ is 'custom'
 - _parse_
+
   - function that takes csv string and returns the value of _prop_ to go on the record
   - only used when _type_ is 'custom'
-- _stringifyRow_
-  - function that takes the whole record and returns a string that will be put in _csvProp_ column
-  - only used when _type_ is 'row'
-- _csvProp_
-- represents header in the csv
-- when not specified defaults to _prop_
-- when _type_ is row is required
+
+- _header_
+  - represents header in the csv
+  - when not specified defaults to _prop_
 
 #### CsvParams
 

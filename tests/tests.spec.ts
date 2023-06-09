@@ -99,20 +99,19 @@ a,1,2.3,4.5,TRUE,50%
 b,2,2.4,5.6,FALSE,0%
 d,,,,,
 `;
-  const cols: CsvColumns = [
-    { type: 'string', csvProp: 'col1', prop: 'strings' },
-    { type: 'integer', csvProp: 'col2', prop: 'integers' },
-    {
+  const cols = {
+    strings: { type: 'text', header: 'col1' },
+    integers: { type: 'integer', header: 'col2' },
+    custom: {
       type: 'custom',
-      csvProp: 'col3',
-      prop: 'custom',
+      header: 'col3',
       parse: (str) => str + 'c',
       stringify: (str) => (str ? str.replace(/c$/, '') : ''),
     },
-    { type: 'float', csvProp: 'col4', prop: 'floats' },
-    { type: 'boolean', csvProp: 'col5', prop: 'bools' },
-    { type: 'percentage', csvProp: 'col6', prop: 'percs' },
-  ];
+    floats: { type: 'float', header: 'col4' },
+    bools: { type: 'boolean', header: 'col5' },
+    percs: { type: 'percentage', header: 'col6' },
+  } satisfies CsvColumns;
   const records = [
     { strings: 'a', integers: 1, custom: '2.3c', floats: 4.5, bools: true, percs: 0.5 },
     { strings: 'b', integers: 2, custom: '2.4c', floats: 5.6, bools: false, percs: 0 },
@@ -203,23 +202,8 @@ a,b
   it('stream-1000', async () => expect(await willParseStreamThrow(csv, 1000)).toBe(true));
 });
 
-describe('stringify row', () => {
-  const csv = `combined
-abc
-123
-`;
-  const records = [
-    { col1: 'a', col2: 'b', col3: 'c' },
-    { col1: '1', col2: '2', col3: '3' },
-  ];
-  const cols: CsvColumns = [
-    { type: 'row', csvProp: 'combined', stringifyRow: (row) => row.col1 + row.col2 + row.col3 },
-  ];
-  it('sync', () => expect(stringifyCsv(records, cols)).toEqual(csv));
-  it('stream', async () => expect(await testStringifyStream(records, cols)).toEqual(csv));
-});
-// boolean: (x) => (x !== '0' && x !== 'N' && x !== 'false' && x !== 'FALSE' && x !== 'False'),
 describe('parse booleans', () => {
+  // boolean: (x) => (x !== '0' && x !== 'N' && x !== 'false' && x !== 'FALSE' && x !== 'False'),
   const csv = `trueStr,true,falseStr,false
 1,1,0,0
 Y,Y,N,N
@@ -232,12 +216,12 @@ YES,YES,NO,NO
 Yes,Yes,No,No
 anything,anything,,
 `;
-  const cols: CsvColumns = [
-    { prop: 'trueStr', type: 'string' },
-    { prop: 'true', type: 'boolean' },
-    { prop: 'falseStr', type: 'string' },
-    { prop: 'false', type: 'boolean' },
-  ];
+  const cols = {
+    trueStr: 'text',
+    true: 'boolean',
+    falseStr: 'text',
+    false: 'boolean',
+  } satisfies CsvColumns;
   const records = [
     { trueStr: '1', falseStr: '0', true: true, false: false },
     { trueStr: 'Y', falseStr: 'N', true: true, false: false },
@@ -255,21 +239,6 @@ anything,anything,,
   it('stream-1000', async () => expect(await testParseStream(csv, 1000, cols)).toEqual(records));
 });
 
-describe('parse ignore columns', () => {
-  const csv = `col,ignore
-a,b
-c,d
-`;
-  const cols: CsvColumns = [
-    { prop: 'col', type: 'string' },
-    { csvProp: 'nevermind', type: 'row', stringifyRow: () => '' },
-  ];
-  const records = [{ col: 'a' }, { col: 'c' }];
-  it('sync', () => expect(parseCsv(csv, cols)).toEqual(records));
-  it('stream-1', async () => expect(await testParseStream(csv, 1, cols)).toEqual(records));
-  it('stream-1000', async () => expect(await testParseStream(csv, 1000, cols)).toEqual(records));
-});
-
 describe('parse empty string untyped', () => {
   const csv = '';
   const records = [];
@@ -280,7 +249,7 @@ describe('parse empty string untyped', () => {
 
 describe('parse empty string typed', () => {
   const csv = '';
-  const cols: CsvColumns = [{ prop: 'col', type: 'string' }];
+  const cols = { col: 'text' } satisfies CsvColumns;
   const records = [];
   it('sync', () => expect(parseCsv(csv, cols)).toEqual(records));
   it('stream-1', async () => expect(await testParseStream(csv, 1, cols)).toEqual(records));
@@ -299,11 +268,11 @@ describe('parse quoted headers untyped', () => {
 describe('parse quoted headers typed', () => {
   const csv = `"a","""",","
 1,2,3`;
-  const cols: CsvColumns = [
-    { prop: 'a', type: 'integer' },
-    { prop: '"', type: 'integer' },
-    { prop: ',', type: 'integer' },
-  ];
+  const cols = {
+    a: 'integer',
+    '"': 'integer',
+    ',': 'integer',
+  } satisfies CsvColumns;
   const records = [{ a: 1, '"': 2, ',': 3 }];
   it('sync', () => expect(parseCsv(csv, cols)).toEqual(records));
   it('stream-1', async () => expect(await testParseStream(csv, 1, cols)).toEqual(records));
@@ -314,11 +283,11 @@ describe('stringify escaped headers', () => {
   const csv = `a,"""",","
 1,2,3
 `;
-  const cols: CsvColumns = [
-    { prop: 'a', type: 'integer' },
-    { prop: '"', type: 'integer' },
-    { prop: ',', type: 'integer' },
-  ];
+  const cols = {
+    a: 'integer',
+    '"': 'integer',
+    ',': 'integer',
+  } satisfies CsvColumns;
   const records = [{ a: 1, '"': 2, ',': 3 }];
   it('sync', () => expect(stringifyCsv(records, cols)).toEqual(csv));
   it('stream', async () => expect(await testStringifyStream(records)).toEqual(csv));
@@ -368,24 +337,6 @@ describe('parse-stringify on non-standard delimiter and rowSeparator', () => {
   it('stringify stream', async () => expect(await testStringifyStream(records, cols, csvParams)).toEqual(csv));
 });
 
-describe('stringify row', () => {
-  const csv = `int,int2,sum
-1,2,3
-3,4,7
-`;
-  const records = [
-    { int: 1, int2: 2 },
-    { int: 3, int2: 4 },
-  ];
-  const cols: CsvColumns = [
-    { prop: 'int', type: 'integer' },
-    { prop: 'int2', type: 'integer' },
-    { csvProp: 'sum', type: 'row', stringifyRow: (row) => '' + (row.int + row.int2) },
-  ];
-  it('stringify sync', () => expect(stringifyCsv(records, cols)).toEqual(csv));
-  it('stringify stream', async () => expect(await testStringifyStream(records, cols)).toEqual(csv));
-});
-
 describe('stringify ignoreUnderscoredProps and titleCaseHeaders', () => {
   const csv = `Foo Bar
 2
@@ -413,7 +364,7 @@ true
 
 `;
   const records = [{ h1: '1' }, { h1: '1.1' }, { h1: 'str' }, { h1: 'true' }, { h1: null }];
-  const cols: CsvColumns = [{ prop: 'h1', type: 'custom' }];
+  const cols = { h1: 'custom' } satisfies CsvColumns;
   it('parse sync', () => expect(parseCsv(csv, cols)).toEqual(records));
   it('parse stream-1', async () => expect(await testParseStream(csv, 1, cols)).toEqual(records));
   it('parse stream-1000', async () => expect(await testParseStream(csv, 1000, cols)).toEqual(records));
@@ -427,7 +378,7 @@ str
 
 `;
   const records = [{ h1: 1 }, { h1: 1.1 }, { h1: 'str' }, { h1: null }];
-  const cols: CsvColumns = [{ prop: 'h1', type: 'custom' }];
+  const cols = { h1: 'custom' } satisfies CsvColumns;
   it('stringify sync', () => expect(stringifyCsv(records, cols)).toEqual(csv));
   it('stringify stream', async () => expect(await testStringifyStream(records, cols)).toEqual(csv));
 });
@@ -442,7 +393,7 @@ false
 
 `;
   const records = [{ h1: 1 }, { h1: 1.1 }, { h1: 'str' }, { h1: true }, { h1: false }, { h1: null }];
-  const cols: CsvColumns = [{ prop: 'h1', type: 'string' }];
+  const cols = { h1: 'text' } satisfies CsvColumns;
   it('stringify sync', () => expect(stringifyCsv(records, cols)).toEqual(csv));
   it('stringify stream', async () => expect(await testStringifyStream(records, cols)).toEqual(csv));
 });
@@ -503,12 +454,12 @@ describe('parse-stringify date', () => {
       timestamp: +new Date(2000, 0, 2, 3, 4, 5, 678),
     },
   ];
-  const cols: CsvColumns = [
-    { prop: 'date', type: 'date' },
-    { prop: 'datetime', type: 'datetime' },
-    { prop: 'datetimes', type: 'datetimes' },
-    { prop: 'timestamp', type: 'timestamp' },
-  ];
+  const cols = {
+    date: 'date',
+    datetime: 'datetime',
+    datetimes: 'datetimes',
+    timestamp: 'timestamp',
+  } satisfies CsvColumns;
   it('parse sync', () => expect(parseCsv(csv, cols)).toEqual(records));
   it('parse stream-1', async () => expect(await testParseStream(csv, 1, cols)).toEqual(records));
   it('parse stream-1000', async () => expect(await testParseStream(csv, 1000, cols)).toEqual(records));
@@ -529,7 +480,7 @@ describe('SimpleDate', () => {
 describe('Missing field in csv should produce null', () => {
   const csv = 'h1,h3\na,a\nb,b\nc,c\n';
   const records = [{ h2: null }, { h2: null }, { h2: null }];
-  const cols: CsvColumns = [{ prop: 'h2', type: 'string' }];
+  const cols = { h2: 'text' } satisfies CsvColumns;
   it('parse sync', () => expect(parseCsv(csv, cols)).toEqual(records));
   it('parse stream-1', async () => expect(await testParseStream(csv, 1, cols)).toEqual(records));
   it('parse stream-1000', async () => expect(await testParseStream(csv, 1000, cols)).toEqual(records));
@@ -537,11 +488,11 @@ describe('Missing field in csv should produce null', () => {
 
 describe('parse without headers', () => {
   const csv = `a,b,c\nd,e,f\n`;
-  const cols = [
-    { prop: 'col1', type: 'string' },
-    { prop: 'col2', type: 'string' },
-    { prop: 'col3', type: 'string' },
-  ] as CsvColumns;
+  const cols = {
+    col1: 'text',
+    col2: 'text',
+    col3: 'text',
+  } satisfies CsvColumns;
   const records = [
     { col1: 'a', col2: 'b', col3: 'c' },
     { col1: 'd', col2: 'e', col3: 'f' },
@@ -564,10 +515,10 @@ describe('parse without headers', () => {
 
 describe('parse throws on non-nullable column with empty value', () => {
   const csv = `a,b\nd,\n`;
-  const cols = [
-    { prop: 'a', type: 'string' },
-    { prop: 'b', type: 'string', nullable: false },
-  ] as CsvColumns;
+  const cols = {
+    a: 'text',
+    b: { type: 'text', nullable: false },
+  } satisfies CsvColumns;
   it('parse sync', () => expect(() => parseCsv(csv, cols)).toThrow());
   it('parse stream-1', async () => expect(await willParseStreamThrow(csv, 1, cols)).toBe(true));
   it('parse stream-1000', async () => expect(await willParseStreamThrow(csv, 1000, cols)).toBe(true));
@@ -582,18 +533,18 @@ describe('stringify throws on non-nullable column with undefined/null/NaN value'
       nan: NaN,
     },
   ];
-  const colsNull = [
-    { prop: 'a', type: 'string' },
-    { prop: 'null', type: 'string', nullable: false },
-  ] as CsvColumns;
-  const colsUndefined = [
-    { prop: 'a', type: 'string' },
-    { prop: 'undefined', type: 'boolean', nullable: false },
-  ] as CsvColumns;
-  const colsNan = [
-    { prop: 'a', type: 'string' },
-    { prop: 'nan', type: 'float', nullable: false },
-  ] as CsvColumns;
+  const colsNull = {
+    a: 'text',
+    null: { type: 'text', nullable: false },
+  } satisfies CsvColumns;
+  const colsUndefined = {
+    a: 'text',
+    undefined: { type: 'boolean', nullable: false },
+  } satisfies CsvColumns;
+  const colsNan = {
+    a: 'text',
+    nan: { type: 'float', nullable: false },
+  } satisfies CsvColumns;
   it('stringify sync - null', () => expect(() => stringifyCsv(records, colsNull)).toThrow());
   it('stringify stream - null', async () => expect(await willStringifyStreamThrow(records, colsNull)).toBe(true));
   it('stringify sync - undefined', () => expect(() => stringifyCsv(records, colsUndefined)).toThrow());
@@ -601,4 +552,18 @@ describe('stringify throws on non-nullable column with undefined/null/NaN value'
     expect(await willStringifyStreamThrow(records, colsUndefined)).toBe(true));
   it('stringify sync - NaN', () => expect(() => stringifyCsv(records, colsNan)).toThrow());
   it('stringify stream - NaN', async () => expect(await willStringifyStreamThrow(records, colsNan)).toBe(true));
+});
+
+describe('stringify respects custom column indexes', () => {
+  const records = [{ a: 0, b: 1, c: 2 }];
+  const cols = {
+    a: { type: 'integer', index: 2 },
+    b: { type: 'integer', index: 1 },
+    c: { type: 'integer', index: 0 },
+  } satisfies CsvColumns;
+  const csv = `c,b,a
+2,1,0
+`;
+  it('stringify sync', () => expect(stringifyCsv(records, cols)).toEqual(csv));
+  it('stringify stream', async () => expect(await testStringifyStream(records, cols)).toEqual(csv));
 });

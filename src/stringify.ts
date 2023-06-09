@@ -2,7 +2,14 @@ import type { CsvColumns, CsvOptions, CsvParams, DateConstructor } from './types
 import type { TransformCallback, Readable } from 'node:stream';
 
 import { Transform } from 'node:stream';
-import { makeColumns, normalizeOptions, shouldEscape, stringifyersByTypeFactory, escape } from './utils';
+import {
+  makeColumns,
+  normalizeOptions,
+  shouldEscape,
+  stringifyersByTypeFactory,
+  escape,
+  transformColumns,
+} from './utils';
 import { collectStream } from './stream-utils';
 
 export class CsvStringifyer<T extends Record<string, any> = Record<string, any>> {
@@ -27,7 +34,6 @@ export class CsvStringifyer<T extends Record<string, any> = Record<string, any>>
   private headers: string[] = [];
   private headerSent = false;
   private noHeader: boolean;
-  private areColsRow: boolean[] = [];
   public output: string[] = [];
 
   constructor(columns?: CsvColumns<T>, options?: CsvParams) {
@@ -91,9 +97,7 @@ export class CsvStringifyer<T extends Record<string, any> = Record<string, any>>
       if (this.isColumnNonNullable[col] && (value === undefined || value === null || isNaN(value))) {
         throw new Error(`Null/undefined/NaN value found in column ${this.props[col]}`);
       }
-      let str = this.areColsRow[col]
-        ? (this.rowStringifyers[col] as (row: T) => string)(row)
-        : (this.stringifyers[col] as (val: any) => string)(value);
+      let str = (this.stringifyers[col] as (val: any) => string)(value);
       if (
         this.hasQuotes &&
         this.shouldTestForEscape[col] &&
@@ -114,30 +118,21 @@ export class CsvStringifyer<T extends Record<string, any> = Record<string, any>>
     this.output.push(str);
   }
 
-  private initiate(columns: CsvColumns<T>): boolean {
+  private initiate(columnsObj: CsvColumns<T>): boolean {
     try {
+      const columns = transformColumns(columnsObj);
       const stringifyersByType = stringifyersByTypeFactory(this.dateClass, this.dateOptions, this.dateFormats);
       this.stringifyers = columns.map((col) => {
         if (col.type === 'custom') {
           return col.stringify || stringifyersByType.custom;
-        } else if (col.type === 'row') {
-          return null;
         } else {
           return stringifyersByType[col.type];
         }
       });
-      this.rowStringifyers = columns.map((col) => {
-        if (col.type === 'row') {
-          return col.stringifyRow;
-        } else {
-          return null;
-        }
-      });
       this.width = columns.length;
-      this.areColsRow = columns.map((col) => col.type === 'row');
-      this.props = columns.map((col) => (col.type === 'row' ? '' : (col.prop as string)));
-      this.headers = columns.map((col) => (col.type === 'row' ? col.csvProp : col.csvProp || (col.prop as string)));
-      this.shouldTestForEscape = columns.map((col) => col.type === 'string' || col.type === 'custom');
+      this.props = columns.map((col) => col.prop as string);
+      this.headers = columns.map((col) => col.header);
+      this.shouldTestForEscape = columns.map((col) => col.type === 'text' || col.type === 'custom');
       this.columnsInferred = true;
       this.headerSent = this.noHeader;
       this.isColumnNonNullable = columns.map((col) => (typeof col.nullable === 'boolean' ? !col.nullable : false));
