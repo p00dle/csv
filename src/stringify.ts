@@ -23,11 +23,11 @@ export class CsvStringifyer<T extends Record<string, any> = Record<string, any>>
   private dateClass: DateConstructor;
   private columnsInferred = false;
   private isColumnNonNullable: boolean[] = [];
+  private columnCategories: (string[] | null)[] = [];
   private dateOptions: CsvOptions['dateOptions'];
   private dateFormats: CsvOptions['dateFormats'];
   private hasQuotes: boolean;
   private stringifyers: (((val: any) => string) | null)[] = [];
-  private rowStringifyers: (((row: T) => string) | null)[] = [];
   private props: string[] = [];
   private width = 0;
   private shouldTestForEscape: boolean[] = [];
@@ -94,8 +94,16 @@ export class CsvStringifyer<T extends Record<string, any> = Record<string, any>>
     const rowStrings: string[] = [];
     for (let col = 0; col < this.width; col++) {
       const value = row[this.props[col] as unknown as keyof T];
-      if (this.isColumnNonNullable[col] && (value === undefined || value === null || isNaN(value))) {
-        throw new Error(`Null/undefined/NaN value found in column ${this.props[col]}`);
+      const valueIsEmpty = value === undefined || value === null || (typeof value === 'number' && isNaN(value));
+      if (this.isColumnNonNullable[col] && valueIsEmpty) {
+        throw new Error(`null/undefined/NaN value found in column ${this.props[col]}`);
+      }
+      const colCategories = this.columnCategories[col];
+      if (colCategories && !valueIsEmpty) {
+        if (!colCategories.includes(value)) {
+          console.log({ colCategories, value, col: this.props[col] });
+          throw new Error(`Unknown category "${value}" in column ${this.props[col]}`);
+        }
       }
       let str = (this.stringifyers[col] as (val: any) => string)(value);
       if (
@@ -129,6 +137,7 @@ export class CsvStringifyer<T extends Record<string, any> = Record<string, any>>
           return stringifyersByType[col.type];
         }
       });
+      this.columnCategories = columns.map((col) => (col.categories.length > 0 ? col.categories : null));
       this.width = columns.length;
       this.props = columns.map((col) => col.prop as string);
       this.headers = columns.map((col) => col.header);

@@ -8,6 +8,7 @@ export type CsvColumnType =
   | 'datetimes'
   | 'timestamp'
   | 'custom'
+  | 'category'
   | 'percentage';
 type DST = 'none' | 'eu' | 'us';
 
@@ -35,14 +36,24 @@ export abstract class DateClass<T extends DateParams = DateParams> {
 
 export type DateConstructor = { new (params: DateParams): DateClass };
 
-export type CsvColumn<T extends Record<string, any>, P extends keyof T = keyof T> = {
-  type: CsvColumnType;
-  nullable?: boolean;
-  stringify?: (val: T[P]) => string;
-  parse?: (str: string) => T[P];
-  header?: string;
-  index?: number;
-};
+export type CsvColumn<T extends Record<string, any>, P extends keyof T = keyof T> =
+  | {
+      type: Exclude<CsvColumnType, 'category'>;
+      nullable?: boolean;
+      stringify?: (val: T[P]) => string;
+      parse?: (str: string) => T[P];
+      header?: string;
+      index?: number;
+    }
+  | {
+      type: 'category';
+      categories: T[P][] | readonly T[P][];
+      nullable?: boolean;
+      stringify?: (val: T[P]) => string;
+      parse?: (str: string) => T[P];
+      header?: string;
+      index?: number;
+    };
 
 export type InternalColumn<T extends Record<string, any>, P extends keyof T = keyof T> = {
   prop: P;
@@ -53,6 +64,7 @@ export type InternalColumn<T extends Record<string, any>, P extends keyof T = ke
   stringifyRow?: (row: T) => string;
   header: string;
   index: number;
+  categories: string[];
 };
 
 export interface CsvOptions {
@@ -90,7 +102,13 @@ export type ParsersByType = Record<CsvColumnType, ((str: string) => any) | null>
 
 export type StringifyersByType = Record<CsvColumnType, ((val: any) => string) | null>;
 
-type InferColumnType<C> = C extends { type: CsvColumnType }
+type InferColumnType<C> = C extends { type: 'category'; categories: infer Y }
+  ? Y extends readonly (infer Z)[]
+    ? Z
+    : Y extends (infer O)[]
+    ? O
+    : never
+  : C extends { type: CsvColumnType }
   ? C['type'] extends 'text'
     ? string
     : C['type'] extends 'integer'

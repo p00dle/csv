@@ -65,6 +65,7 @@ export function parsersByTypeFactory(
   const timestamp = new DateClass({ ...dateOptions, format: dateFormats.timestamp });
   return {
     text: (x) => x,
+    category: (x) => x,
     integer: (x) => parseInt(x, 10),
     float: (x) => (x as unknown as number) * 1,
     boolean: (x) =>
@@ -96,6 +97,7 @@ export function stringifyersByTypeFactory(
   const datetimes = new DateClass({ ...dateOptions, format: dateFormats.dateTimeSeconds });
   const timestamp = new DateClass({ ...dateOptions, format: dateFormats.timestamp });
   return {
+    category: (x) => (typeof x === 'string' ? x : ''),
     text: (x) => (typeof x === 'string' ? x : typeof x === 'boolean' || x ? '' + x : ''),
     integer: (x) => (typeof x === 'number' && !isNaN(x) ? x.toFixed(0) : ''),
     float: (x) => (typeof x === 'number' && !isNaN(x) ? '' + x : ''),
@@ -135,12 +137,14 @@ export function transformColumns<T extends Record<string, any>>(columns: CsvColu
             header: prop,
             type: col,
             index: i,
+            categories: [],
           }
         : {
             ...col,
             index: typeof col.index === 'undefined' ? i : col.index,
             prop,
             header: typeof col.header === 'undefined' ? (prop as string) : col.header,
+            categories: col.type === 'category' ? (col.categories as string[]) : [],
           }
     )
     .sort((a, b) => a.index - b.index);

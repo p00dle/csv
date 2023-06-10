@@ -94,10 +94,10 @@ d,,
 });
 
 describe('parse-stringify typed', () => {
-  const csv = `col1,col2,col3,col4,col5,col6
-a,1,2.3,4.5,TRUE,50%
-b,2,2.4,5.6,FALSE,0%
-d,,,,,
+  const csv = `col1,col2,col3,col4,col5,col6,col7
+a,1,2.3,4.5,TRUE,50%,A
+b,2,2.4,5.6,FALSE,0%,B
+d,,,,,,
 `;
   const cols = {
     strings: { type: 'text', header: 'col1' },
@@ -111,11 +111,12 @@ d,,,,,
     floats: { type: 'float', header: 'col4' },
     bools: { type: 'boolean', header: 'col5' },
     percs: { type: 'percentage', header: 'col6' },
+    cats: { type: 'category', categories: ['A', 'B'], header: 'col7' },
   } satisfies CsvColumns;
   const records = [
-    { strings: 'a', integers: 1, custom: '2.3c', floats: 4.5, bools: true, percs: 0.5 },
-    { strings: 'b', integers: 2, custom: '2.4c', floats: 5.6, bools: false, percs: 0 },
-    { strings: 'd', integers: null, custom: null, floats: null, bools: null, percs: null },
+    { strings: 'a', integers: 1, custom: '2.3c', floats: 4.5, bools: true, percs: 0.5, cats: 'A' },
+    { strings: 'b', integers: 2, custom: '2.4c', floats: 5.6, bools: false, percs: 0, cats: 'B' },
+    { strings: 'd', integers: null, custom: null, floats: null, bools: null, percs: null, cats: null },
   ];
   it('parse sync', () => expect(parseCsv(csv, cols)).toEqual(records));
   it('parse stream-1', async () => expect(await testParseStream(csv, 1, cols)).toEqual(records));
@@ -564,6 +565,46 @@ describe('stringify respects custom column indexes', () => {
   const csv = `c,b,a
 2,1,0
 `;
+  it('stringify sync', () => expect(stringifyCsv(records, cols)).toEqual(csv));
+  it('stringify stream', async () => expect(await testStringifyStream(records, cols)).toEqual(csv));
+});
+
+describe('parse throws on unknown category', () => {
+  const csv = `a\nb\n`;
+  const cols = {
+    a: { type: 'category', categories: ['c'] },
+  } satisfies CsvColumns;
+  it('parse sync', () => expect(() => parseCsv(csv, cols)).toThrow());
+  it('parse stream-1', async () => expect(await willParseStreamThrow(csv, 1, cols)).toBe(true));
+  it('parse stream-1000', async () => expect(await willParseStreamThrow(csv, 1000, cols)).toBe(true));
+});
+
+describe('parse accepts known category', () => {
+  const records = [{ a: 'c' }];
+  const csv = `a\nc\n`;
+  const cols = {
+    a: { type: 'category', categories: ['c'] },
+  } satisfies CsvColumns;
+  it('parse sync', () => expect(parseCsv(csv, cols)).toEqual(records));
+  it('parse stream-1', async () => expect(await testParseStream(csv, 1, cols)).toEqual(records));
+  it('parse stream-1000', async () => expect(await testParseStream(csv, 1000, cols)).toEqual(records));
+});
+
+describe('stringify throws on unknown category', () => {
+  const records = [{ a: 'b' }];
+  const cols = {
+    a: { type: 'category', categories: ['c'] },
+  } satisfies CsvColumns;
+  it('stringify sync', () => expect(() => stringifyCsv(records, cols)).toThrow());
+  it('stringify stream', async () => expect(await willStringifyStreamThrow(records, cols)).toBe(true));
+});
+
+describe('stringify accepts known category', () => {
+  const records = [{ a: 'c' }];
+  const csv = `a\nc\n`;
+  const cols = {
+    a: { type: 'category', categories: ['c'] },
+  } satisfies CsvColumns;
   it('stringify sync', () => expect(stringifyCsv(records, cols)).toEqual(csv));
   it('stringify stream', async () => expect(await testStringifyStream(records, cols)).toEqual(csv));
 });

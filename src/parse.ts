@@ -34,6 +34,7 @@ export class CsvParser<T extends Record<string, any> = Record<string, any>> {
   private isColumnNonNullable: boolean[] = [];
   private colsNotFound: string[] = [];
   private parsers: (((str: string) => any) | null)[] = [];
+  private columnCategories: (string[] | null)[] = [];
   private width = 0;
   private col = 0;
   private noHeader: boolean;
@@ -54,6 +55,7 @@ export class CsvParser<T extends Record<string, any> = Record<string, any>> {
       this.isColumnNonNullable = this.columns.map((col) =>
         typeof col.nullable === 'undefined' ? false : !col.nullable
       );
+      this.columnCategories = this.columns.map((col) => (col.categories.length > 0 ? col.categories : null));
     }
     const {
       delimiter,
@@ -321,8 +323,15 @@ export class CsvParser<T extends Record<string, any> = Record<string, any>> {
     if (this.useColumn[this.col]) {
       let value = this.buffer.slice(this.valueIndexStart, this.valueIndexEnd);
       if (this.isCurrentValueQuoted) value = value.replace(this.escapeQuoteRegex, this.quote);
-      if (this.isColumnNonNullable[this.col] && value === '') {
+      const valueIsEmpty = value === '';
+      if (this.isColumnNonNullable[this.col] && valueIsEmpty) {
         throw new Error(`Null value found in column ${this.csvHeaders[this.col]}`);
+      }
+      const colCategories = this.columnCategories[this.col];
+      if (colCategories && !valueIsEmpty) {
+        if (!colCategories.includes(value)) {
+          throw new Error(`Unknown category "${value}" in column ${this.csvHeaders[this.col]}`);
+        }
       }
       this.rowValues[this.saveFieldAs[this.col] as keyof T] =
         value === '' ? this.emptyValue : (this.parsers[this.col] as (str: string) => any)(value);
