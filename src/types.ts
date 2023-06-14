@@ -158,4 +158,6 @@ type InferColumns<C> = {
 
 type FlatType<T> = T extends object ? { [K in keyof T]: FlatType<T[K]> } : T;
 
-export type InferParseType<C extends CsvColumns> = C extends never ? Record<string, any> : FlatType<InferColumns<C>[]>;
+export type InferColumnsType<C extends CsvColumns> = C extends never
+  ? Record<string, any>
+  : FlatType<InferColumns<C>[]>;

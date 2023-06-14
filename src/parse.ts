@@ -1,5 +1,5 @@
 import type { TransformCallback } from 'node:stream';
-import type { CsvColumns, CsvOptions, CsvParams, DateConstructor, InferParseType, InternalColumn } from './types';
+import type { CsvColumns, CsvOptions, CsvParams, DateConstructor, InferColumnsType, InternalColumn } from './types';
 
 import { Transform, Readable } from 'node:stream';
 import { normalizeOptions, parsersByTypeFactory, transformColumns } from './utils';
@@ -361,7 +361,7 @@ export class CsvParser<T extends Record<string, any> = Record<string, any>> {
   //
 }
 
-export function parseCsv<C extends CsvColumns>(string: string, columns?: C, options?: CsvParams): InferParseType<C> {
+export function parseCsv<C extends CsvColumns>(string: string, columns?: C, options?: CsvParams): InferColumnsType<C> {
   const parser = new CsvParser(false, columns, options);
   const preserveCarriageReturn = options ? !!options.preserveCarriageReturn : false;
   parser.buffer = !preserveCarriageReturn && /\r/.test(string) ? string.replace(/\r/g, '') : string;
